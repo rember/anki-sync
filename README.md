@@ -2,11 +2,11 @@
 
 ## Setup
 
-- Copy `.env.example` to `.env` and fill the variables.
+Copy `.env.example` to `.env` and fill the variables.
 
-- Install [Nix](https://nixos.org/).
+Install [Nix](https://nixos.org/).
 
-- Run `nix develop -c $SHELL` to start a development shell. This happens automatically if you use [direnv](https://direnv.net/).
+Run `nix develop -c $SHELL` to start a development shell. This happens automatically if you use [direnv](https://direnv.net/).
 
 ## Develop & Publish
 
@@ -16,7 +16,7 @@ Run `make zip` to create a `rember-anki-sync.zip` file which can be uploaded to 
 
 ## Notes
 
-We use Python 3.9 because that's the version currently used in the Anki repo
+We use Python 3.9 because that's the version currently used in the Anki repo.
 
 ## References
 
