@@ -1,0 +1,15 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+This project is a Anki add-on that syncs data from Rember, another spaced repetition system. In particular, every time Anki is opened the addon pulls flashcards from Rember and update the user's Anki collection.
+
+# Code guidelines
+
+We value consistency in the codebase. Adhere to shared coding standards, style guides, and best practices across the project. Write code that is easy for any team member to read, understand, and modify, ensuring consistent naming conventions, formatting, and patterns. Avoid personal preferences that deviate from the team's agreed standards, and prioritize clarity over cleverness. Aim for simplicity and predictability so that the codebase feels cohesive, regardless of who wrote it, enabling smoother collaboration and long-term maintainability.
+
+Never remove or update the code that is not part of the task you are told to do. Example: Don't remove comment lines unless you are specifically asked to do.
+
+Follow a noun-first approach for variables and constants, for example `idChat` instead of `chatId`. Follow a verb-fist approach for functions, for example `computeContentFromTree` or `fetchDataUser`. Notice that we still follow the noun-first approach, it's `fetchDataUser` instead of `fetchUserData`.
