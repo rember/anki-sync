@@ -117,7 +117,7 @@ def exchange(code: str, redirect_uri: str, verifier: str) -> ResultExchange:
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
         "client_id": ID_CLIENT,
-        "verifier": verifier,
+        "code_verifier": verifier,
     }
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
@@ -126,7 +126,7 @@ def exchange(code: str, redirect_uri: str, verifier: str) -> ResultExchange:
     if response.ok:
         data = response.json()
         return auth_tokens.Tokens(
-            access=data["token_access"],
+            access=data["access_token"],
             refresh=data["refresh_token"],
         )
     else:
