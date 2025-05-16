@@ -18,6 +18,10 @@ Run `make zip` to create a `rember-anki-sync.zip` file which can be uploaded to 
 
 We use Python 3.9 because that's the version currently used in the Anki repo.
 
+We install packages with `uv` only for type checking, the code is currently only executed by Anki.
+
+Anki stores AnkiWeb and AnkiHub auth tokens in the user profile as plain text, see for example [`sync_login`](https://github.com/ankitects/anki/blob/d3d6bd8ce006f178e2271fd8d317fdc8832095df/qt/aqt/sync.py#L320-L321).
+
 ## References
 
 - [Anki GitHub](https://github.com/ankitects/anki/tree/main)

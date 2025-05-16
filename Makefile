@@ -2,7 +2,7 @@ include .env
 
 PATH_ANKI_ADDON_DEV = $(PATH_ANKI)/addons21/rember-anki-sync-dev
 
-FILES_SOURCE = __init__.py
+FILES_SOURCE = src/__init__.py src/auth.py
 FILENAME_ZIP = rember-anki-sync.zip
 
 .PHONY: dev zip
