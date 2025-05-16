@@ -1,3 +1,9 @@
+.env
+rember-anki-sync.zip
+
+# MacOS
+.DS_Store
+
 # Python-generated files
 __pycache__/
 *.py[oc]

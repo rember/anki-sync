@@ -2,8 +2,17 @@
 
 ## Setup
 
+- Copy `.env.example` to `.env` and fill the variables.
+
 - Install [Nix](https://nixos.org/).
+
 - Run `nix develop -c $SHELL` to start a development shell. This happens automatically if you use [direnv](https://direnv.net/).
+
+## Develop & Publish
+
+Run `make dev` to createa `rember-anki-sync-dev` add-on in Anki, which you can use to test the add-on after making changes.
+
+Run `make zip` to create a `rember-anki-sync.zip` file which can be uploaded to [AnkiWeb](https://ankiweb.net/shared/addons).
 
 ## Notes
 
