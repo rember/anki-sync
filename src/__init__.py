@@ -1,3 +1,12 @@
+from aqt import appVersion
+
+required_anki_version = (23, 10, 0)
+anki_version = tuple(int(segment) for segment in appVersion.split("."))
+if anki_version < required_anki_version:
+    raise Exception(
+        f"Minimum Anki version supported: {required_anki_version[0]}.{required_anki_version[1]}.{required_anki_version[2]}"
+    )
+
 from typing import Literal, TypedDict, Union
 
 from aqt import mw
