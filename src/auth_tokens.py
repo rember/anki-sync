@@ -18,6 +18,7 @@ class Tokens(TypedDict):
 
 
 class PayloadTokenAccess(TypedDict):
+    id_user: str
     exp: int  # Expiration time (Unix timestamp)
 
 
@@ -69,7 +70,10 @@ def decode_token_access(token_access: str) -> ResultDecodeTokenAccess:
             raise ValueError("Invalid 'properties.idUser' field")
 
         return SuccessDecodeTokenAccess(
-            _tag="Success", payload=PayloadTokenAccess(exp=int(jwt_json["exp"]))
+            _tag="Success",
+            payload=PayloadTokenAccess(
+                exp=int(jwt_json["exp"]), id_user=jwt_json["properties"]["idUser"]
+            ),
         )
 
     except:

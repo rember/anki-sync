@@ -9,7 +9,7 @@ if anki_version < required_anki_version:
 
 from typing import Literal, TypedDict, Union
 
-from aqt import mw
+from aqt import gui_hooks, mw
 from aqt.errors import show_exception
 from aqt.operations import QueryOp
 from aqt.qt import QAction, qconnect
@@ -70,8 +70,13 @@ def _success_sign_in(
 
     server_loopback.close()
 
-    assert mw.pm is not None
+    if mw.pm is None:
+        raise Exception("ProfileManager not defined")
     auth_tokens.set_tokens(mw.pm, result_sign_in["tokens"])
+
+    refresh_action_sign_in()
+
+    showInfo("Signed in to Rember successfully.")
 
 
 def _failure_sign_in(
@@ -82,6 +87,8 @@ def _failure_sign_in(
 
     auth_tokens.set_tokens(mw.pm, None)
 
+    refresh_action_sign_in()
+
     if isinstance(error, Exception):
         show_exception(parent=mw, exception=error)
     else:
@@ -91,7 +98,8 @@ def _failure_sign_in(
 
 
 def on_sign_in() -> None:
-    assert mw.pm is not None
+    if mw.pm is None:
+        raise Exception("ProfileManager not defined")
 
     # Create server to receive the OAuth redirect
     server_loopback = auth_server_loopback.ServerLoopback()
@@ -116,18 +124,64 @@ def on_sign_in() -> None:
 
 
 def on_log_out() -> None:
-    assert mw.pm is not None
+    if mw.pm is None:
+        raise Exception("ProfileManager not defined")
 
     auth_tokens.set_tokens(mw.pm, None)
     showInfo("Logged out from your Rember account")
 
+    refresh_action_sign_in()
+
+
+def refresh_action_sign_in() -> None:
+    if mw.pm is None:
+        raise Exception("ProfileManager not defined")
+
+    tokens = auth_tokens.get_tokens(mw.pm)
+    print("tokens", tokens)
+
+    if tokens is None:
+        action_sign_in.setText("Sign in")
+        try:
+            action_sign_in.triggered.disconnect(on_log_out)
+        except:
+            pass  # No function is connected yet
+        qconnect(action_sign_in.triggered, on_sign_in)
+    else:
+        action_sign_in.setText("Log out")
+        try:
+            action_sign_in.triggered.disconnect(on_sign_in)
+        except:
+            pass  # No function is connected yet
+        qconnect(action_sign_in.triggered, on_log_out)
+
 
 action_sign_in = QAction("Sign in")
-qconnect(action_sign_in.triggered, on_sign_in)
 
-# TODO: detect based on initial value
-# action_sign_in.setText("Log out")
-# action_sign_in.setText("Sign in")
+gui_hooks.profile_did_open.append(refresh_action_sign_in)
+
+#: "Status" menu item
+
+
+def on_status() -> None:
+    if mw.pm is None:
+        raise Exception("ProfileManager not defined")
+
+    tokens = auth_tokens.get_tokens(mw.pm)
+    if tokens is None:
+        showInfo("Logged out")
+        return
+
+    result_decode_token_access = auth_tokens.decode_token_access(tokens["access"])
+    if result_decode_token_access["_tag"] == "ErrorTokens":
+        showInfo("Error decoding access token")
+        return
+
+    showInfo(f'Signed in as {result_decode_token_access["payload"]["id_user"]}')
+
+
+action_status = QAction("Status")
+qconnect(action_status.triggered, on_status)
 
 #: "Help" menu item
 
@@ -146,4 +200,5 @@ if mw.pm is not None:
     assert menu_rember is not None
 
     menu_rember.addAction(action_sign_in)
+    menu_rember.addAction(action_status)
     menu_rember.addAction(action_help)
