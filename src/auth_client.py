@@ -1,10 +1,9 @@
 import base64
 import hashlib
-import json
 import secrets
 import time
 import urllib.parse
-from typing import Optional, TypedDict, Union
+from typing import Literal, Optional, TypedDict, Union
 
 import requests
 
@@ -18,8 +17,8 @@ ENDPOINT_TOKEN = f"{ISSUER_URL}/token"
 ID_CLIENT = "rember-anki-sync"
 
 
-class ErrorOAuth(TypedDict):
-    tag: str
+class ErrorClientAuth(TypedDict):
+    _tag: Literal["ErrorClientAuth"]
     message: str
 
 
@@ -27,7 +26,8 @@ class ErrorOAuth(TypedDict):
 
 
 def _generate_verifier(length_bytes: int = 64) -> str:
-    """Generates a high-entropy cryptographic random string used as a PKCE code verifier.
+    """
+    Generates a high-entropy cryptographic random string used as a PKCE code verifier.
     Uses `length_bytes` random bytes, resulting in a base64url encoded string of length ~4/3 * length_bytes.
     RFC 7636 specifies verifier length between 43 and 128 characters.
     64 bytes -> ~86 characters, which is well within the spec.
@@ -63,16 +63,7 @@ class ResultAuthorize(TypedDict):
 
 
 def authorize(redirect_uri: str) -> ResultAuthorize:
-    """
-    Constructs the authorization URL for the OAuth 2.0 flow with PKCE.
-
-    Args:
-        redirect_uri: The URI to which the user will be redirected after authorization.
-
-    Returns:
-        An ResultAuthorize dictionary containing the authorization URL and the challenge object
-        (with state and verifier).
-    """
+    """Constructs the authorization URL for the OAuth 2.0 flow with PKCE."""
     verifier = _generate_verifier()
     code_challenge = _generate_challenge(verifier)
     state = _generate_random_state()
@@ -97,21 +88,17 @@ def authorize(redirect_uri: str) -> ResultAuthorize:
 
 #: Exchange
 
-ResultExchange = Union[auth_tokens.Tokens, ErrorOAuth]
+
+class SuccessExchange(TypedDict):
+    _tag: Literal["Success"]
+    tokens: auth_tokens.Tokens
+
+
+ResultExchange = Union[SuccessExchange, ErrorClientAuth]
 
 
 def exchange(code: str, redirect_uri: str, verifier: str) -> ResultExchange:
-    """
-    Exchanges an authorization code for access and refresh tokens.
-
-    Args:
-        code: The authorization code received from the OAuth server.
-        redirect_uri: The redirect URI used in the initial authorization request.
-        verifier: The PKCE code verifier (referred to as code_verifier in the OAuth spec for the request body by the user, but key in payload is 'verifier').
-
-    Returns:
-        Tokens if successful, ErrorOAuth otherwise.
-    """
+    """Exchanges an authorization code for access and refresh tokens."""
     payload = {
         "code": code,
         "redirect_uri": redirect_uri,
@@ -125,51 +112,39 @@ def exchange(code: str, redirect_uri: str, verifier: str) -> ResultExchange:
 
     if response.ok:
         data = response.json()
-        return auth_tokens.Tokens(
-            access=data["access_token"],
-            refresh=data["refresh_token"],
+        return SuccessExchange(
+            _tag="Success",
+            tokens=auth_tokens.Tokens(
+                access=data["access_token"],
+                refresh=data["refresh_token"],
+            ),
         )
     else:
-        return ErrorOAuth(
-            tag="invalid_authorization_code",
+        return ErrorClientAuth(
+            _tag="ErrorClientAuth",
             message="Invalid authorization code.",
         )
 
 
 #: Refresh
 
-ResultRefresh = Union[None, auth_tokens.Tokens, ErrorOAuth]
+ResultRefresh = Union[
+    None, auth_tokens.Tokens, ErrorClientAuth, auth_tokens.ErrorTokens
+]
 
 
 def refresh(token_refresh: str, token_access: Optional[str] = None) -> ResultRefresh:
     """
     Refreshes access and refresh tokens using a refresh token.
     Optionally checks if the current access token is still valid before making a request.
-
-    Args:
-        token_refresh: The refresh token.
-        token_access: Optional. The current access token to check for expiration.
-
-    Returns:
-        Tokens if successfully refresh, None if the access token has not expired, ErrorOAuth otherwise.
     """
     if token_access:
-        try:
-            jwt_b64 = token_access.split(".")[1]
-            jwt_b64 += "=" * (-len(jwt_b64) % 4)
-            jwt_decoded = base64.urlsafe_b64decode(jwt_b64).decode("utf-8")
-            jwt_json = json.loads(jwt_decoded)
-            exp = jwt_json.get("exp")
-
-            if isinstance(exp, (int, float)):
-                # Allow 30s window for expiration
-                if exp > time.time() + 30:
-                    return None
-        except Exception:
-            return ErrorOAuth(
-                tag="invalid_token_access",
-                message="Invalid access token.",
-            )
+        result_decode_token_access = auth_tokens.decode_token_access(token_access)
+        if result_decode_token_access["_tag"] == "ErrorTokens":
+            return result_decode_token_access
+        # Allow 30s window for expiration
+        if result_decode_token_access["payload"]["exp"] > time.time() + 30:
+            return None
 
     payload = {
         "grant_type": "refresh_token",
@@ -186,7 +161,7 @@ def refresh(token_refresh: str, token_access: Optional[str] = None) -> ResultRef
             refresh=data["refresh_token"],
         )
     else:
-        return ErrorOAuth(
-            tag="invalid_refresh_token",
+        return ErrorClientAuth(
+            _tag="ErrorClientAuth",
             message="Invalid refresh token.",
         )
