@@ -72,27 +72,38 @@ class _Handler(BaseHTTPRequestHandler):
 
         code = params_query.get("code", [None])[0]
         state = params_query.get("state", [None])[0]
+        error = params_query.get("error", [None])[0]
+
+        if isinstance(error, str):
+            self._send_response_html(
+                "Invalid Request",
+                f"Something went wrong. {error}",
+            )
+            return self._callback(
+                ErrorServerLoopback(
+                    _tag="ErrorServerLoopback",
+                    message=error,
+                )
+            )
 
         if not isinstance(code, str) or not isinstance(state, str):
             self._send_response_html(
                 "Invalid Request",
                 "The request was invalid. Code and state parameters must be strings.",
             )
-            self._callback(
+            return self._callback(
                 ErrorServerLoopback(
                     _tag="ErrorServerLoopback",
                     message="Invalid code and state parameters",
                 )
             )
-        else:
-            self._send_response_html(
-                "Authentication Successful!", "Your authentication was successful."
-            )
-            self._callback(
-                SuccessCallback(
-                    _tag="Success", data_auth=DataAuth(code=code, state=state)
-                )
-            )
+
+        self._send_response_html(
+            "Authentication Successful!", "Your authentication was successful."
+        )
+        return self._callback(
+            SuccessCallback(_tag="Success", data_auth=DataAuth(code=code, state=state))
+        )
 
     # Suppress log messages to keep the console clean
     def log_message(self, format: str, *args: Any) -> None:
@@ -137,7 +148,7 @@ class ServerLoopback:
     to handle OAuth 2.0 authentication callbacks.
 
     Attributes:
-        uri_redirect (str): The complete redirect URI (e.g., 'http://localhost:{port}/callback')
+        uri_redirect (str): The complete redirect URI (e.g., 'http://127.0.0.1:{port}/callback')
                           that should be used in the OAuth authorization request.
 
     The server goes through three states:
@@ -160,7 +171,7 @@ class ServerLoopback:
         try:
             server_http = HTTPServer(
                 # We set the port to 0 to assign a free port
-                ("localhost", 0),
+                ("127.0.0.1", 0),
                 functools.partial(
                     _Handler,
                     callback=callback,
@@ -170,7 +181,7 @@ class ServerLoopback:
             self._state = StateClosed(_tag="Closed")
             raise RuntimeError(f"Failed to initialize HTTP server: {e}") from e
 
-        self.uri_redirect = f"http://localhost:{server_http.server_port}/callback"
+        self.uri_redirect = f"http://127.0.0.1:{server_http.server_port}/callback"
         self._state = StateStarted(_tag="Started", server_http=server_http)
 
     def listen(self, timeout: Optional[float] = 120.0) -> ResultListen:

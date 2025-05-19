@@ -138,7 +138,6 @@ def refresh_action_sign_in() -> None:
         raise Exception("ProfileManager not defined")
 
     tokens = auth_tokens.get_tokens(mw.pm)
-    print("tokens", tokens)
 
     if tokens is None:
         action_sign_in.setText("Sign in")
