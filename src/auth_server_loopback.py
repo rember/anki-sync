@@ -211,7 +211,10 @@ class ServerLoopback:
                 )
 
             if self._state["result_callback"] is None:
-                raise RuntimeError("Authentication data not set")
+                # We get here is `listen` is cancelled
+                return ErrorServerLoopback(
+                    _tag="ErrorServerLoopback", message="Authentication data not set"
+                )
 
             if self._state["result_callback"]["_tag"] == "Success":
                 return SuccessListen(
