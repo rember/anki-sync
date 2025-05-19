@@ -9,29 +9,30 @@ from typing import Literal, Optional, TypedDict, Union
 
 from aqt.profiles import ProfileManager
 
-#:
+
+class Tokens:
+    def __init__(self, access: str, refresh: str):
+        self.access = access
+        self.refresh = refresh
 
 
-class Tokens(TypedDict):
-    access: str
-    refresh: str
+class PayloadTokenAccess:
+    def __init__(self, id_user: str, exp: int):
+        self.id_user = id_user
+        self.exp = exp  # Expiration time (Unix timestamp)
 
 
-class PayloadTokenAccess(TypedDict):
-    id_user: str
-    exp: int  # Expiration time (Unix timestamp)
-
-
-class ErrorTokens(TypedDict):
-    _tag: Literal["ErrorTokens"]
-    message: str
+class ErrorTokens:
+    def __init__(self, message: str):
+        self._tag: Literal["ErrorTokens"] = "ErrorTokens"
+        self.message = message
 
 
 def set_tokens(pm: ProfileManager, tokens: Optional[Tokens]) -> None:
     assert pm.profile is not None
     if tokens:
-        pm.profile["thirdPartyRemberTokenAccess"] = tokens["access"]
-        pm.profile["thirdPartyRemberTokenRefresh"] = tokens["refresh"]
+        pm.profile["thirdPartyRemberTokenAccess"] = tokens.access
+        pm.profile["thirdPartyRemberTokenRefresh"] = tokens.refresh
     else:
         pm.profile["thirdPartyRemberTokenAccess"] = None
         pm.profile["thirdPartyRemberTokenRefresh"] = None
@@ -45,12 +46,13 @@ def get_tokens(pm: ProfileManager) -> Optional[Tokens]:
     if token_access is None or token_refresh is None:
         return None
 
-    return {"access": token_access, "refresh": token_refresh}
+    return Tokens(access=token_access, refresh=token_refresh)
 
 
-class SuccessDecodeTokenAccess(TypedDict):
-    _tag: Literal["Success"]
-    payload: PayloadTokenAccess
+class SuccessDecodeTokenAccess:
+    def __init__(self, payload: PayloadTokenAccess):
+        self._tag: Literal["Success"] = "Success"
+        self.payload = payload
 
 
 ResultDecodeTokenAccess = Union[SuccessDecodeTokenAccess, ErrorTokens]
@@ -70,11 +72,10 @@ def decode_token_access(token_access: str) -> ResultDecodeTokenAccess:
             raise ValueError("Invalid 'properties.idUser' field")
 
         return SuccessDecodeTokenAccess(
-            _tag="Success",
             payload=PayloadTokenAccess(
                 exp=int(jwt_json["exp"]), id_user=jwt_json["properties"]["idUser"]
-            ),
+            )
         )
 
     except:
-        return ErrorTokens(_tag="ErrorTokens", message="Invalid access token.")
+        return ErrorTokens(message="Invalid access token.")

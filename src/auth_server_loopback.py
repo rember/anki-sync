@@ -9,19 +9,22 @@ import html
 #: Handler
 
 
-class DataAuth(TypedDict):
-    code: str
-    state: str
+class DataAuth:
+    def __init__(self, code: str, state: str):
+        self.code = code
+        self.state = state
 
 
-class ErrorServerLoopback(TypedDict):
-    _tag: Literal["ErrorServerLoopback",]
-    message: str
+class ErrorServerLoopback:
+    def __init__(self, message: str):
+        self._tag: Literal["ErrorServerLoopback"] = "ErrorServerLoopback"
+        self.message = message
 
 
-class SuccessCallback(TypedDict):
-    _tag: Literal["Success"]
-    data_auth: DataAuth
+class SuccessCallback:
+    def __init__(self, data_auth: DataAuth):
+        self._tag: Literal["Success"] = "Success"
+        self.data_auth = data_auth
 
 
 ResultCallback = Union[SuccessCallback, ErrorServerLoopback]
@@ -79,12 +82,7 @@ class _Handler(BaseHTTPRequestHandler):
                 "Invalid Request",
                 f"Something went wrong. {error}",
             )
-            return self._callback(
-                ErrorServerLoopback(
-                    _tag="ErrorServerLoopback",
-                    message=error,
-                )
-            )
+            return self._callback(ErrorServerLoopback(message=error))
 
         if not isinstance(code, str) or not isinstance(state, str):
             self._send_response_html(
@@ -92,17 +90,14 @@ class _Handler(BaseHTTPRequestHandler):
                 "The request was invalid. Code and state parameters must be strings.",
             )
             return self._callback(
-                ErrorServerLoopback(
-                    _tag="ErrorServerLoopback",
-                    message="Invalid code and state parameters",
-                )
+                ErrorServerLoopback(message="Invalid code and state parameters")
             )
 
         self._send_response_html(
             "Authentication Successful!", "Your authentication was successful."
         )
         return self._callback(
-            SuccessCallback(_tag="Success", data_auth=DataAuth(code=code, state=state))
+            SuccessCallback(data_auth=DataAuth(code=code, state=state))
         )
 
     # Suppress log messages to keep the console clean
@@ -113,29 +108,39 @@ class _Handler(BaseHTTPRequestHandler):
 #: ServerLoopback
 
 
-class StateStarted(TypedDict):
-    _tag: Literal["Started"]
-    server_http: HTTPServer
+class StateStarted:
+    def __init__(self, server_http: HTTPServer):
+        self._tag: Literal["Started"] = "Started"
+        self.server_http = server_http
 
 
-class StateListening(TypedDict):
-    _tag: Literal["Listening"]
-    server_http: HTTPServer
-    thread_server_http: threading.Thread
-    event_done: threading.Event
-    result_callback: Optional[ResultCallback]
+class StateListening:
+    def __init__(
+        self,
+        server_http: HTTPServer,
+        thread_server_http: threading.Thread,
+        event_done: threading.Event,
+        result_callback: Optional[ResultCallback],
+    ):
+        self._tag: Literal["Listening"] = "Listening"
+        self.server_http = server_http
+        self.thread_server_http = thread_server_http
+        self.event_done = event_done
+        self.result_callback = result_callback
 
 
-class StateClosed(TypedDict):
-    _tag: Literal["Closed"]
+class StateClosed:
+    def __init__(self):
+        self._tag: Literal["Closed"] = "Closed"
 
 
 ServerState = Union[StateStarted, StateListening, StateClosed]
 
 
-class SuccessListen(TypedDict):
-    _tag: Literal["Success"]
-    data_auth: DataAuth
+class SuccessListen:
+    def __init__(self, data_auth: DataAuth):
+        self._tag: Literal["Success"] = "Success"
+        self.data_auth = data_auth
 
 
 ResultListen = Union[SuccessListen, ErrorServerLoopback]
@@ -162,11 +167,11 @@ class ServerLoopback:
 
     def __init__(self):
         def callback(result_callback: ResultCallback) -> None:
-            if self._state["_tag"] != "Listening":
+            if self._state._tag != "Listening":
                 # Silently ignore callbacks in non-listening state
                 return
-            self._state["result_callback"] = result_callback
-            self._state["event_done"].set()
+            self._state.result_callback = result_callback
+            self._state.event_done.set()
 
         try:
             server_http = HTTPServer(
@@ -178,24 +183,23 @@ class ServerLoopback:
                 ),
             )
         except Exception as e:
-            self._state = StateClosed(_tag="Closed")
+            self._state = StateClosed()
             raise RuntimeError(f"Failed to initialize HTTP server: {e}") from e
 
         self.uri_redirect = f"http://127.0.0.1:{server_http.server_port}/callback"
-        self._state = StateStarted(_tag="Started", server_http=server_http)
+        self._state = StateStarted(server_http=server_http)
 
     def listen(self, timeout: Optional[float] = 120.0) -> ResultListen:
-        if self._state["_tag"] != "Started":
-            raise RuntimeError(f"Invalid state: {self._state['_tag']}")
+        if self._state._tag != "Started":
+            raise RuntimeError(f"Invalid state: {self._state._tag}")
 
         thread_server_http = threading.Thread(
-            target=self._state["server_http"].serve_forever, daemon=True
+            target=self._state.server_http.serve_forever, daemon=True
         )
         event_done = threading.Event()
 
         self._state = StateListening(
-            _tag="Listening",
-            server_http=self._state["server_http"],
+            server_http=self._state.server_http,
             thread_server_http=thread_server_http,
             event_done=event_done,
             result_callback=None,
@@ -206,37 +210,31 @@ class ServerLoopback:
             # Block until `event_done` is set
             if not event_done.wait(timeout):
                 return ErrorServerLoopback(
-                    _tag="ErrorServerLoopback",
-                    message="Timed out waiting for authentication callback",
+                    message="Timed out waiting for authentication callback"
                 )
 
-            if self._state["result_callback"] is None:
+            if self._state.result_callback is None:
                 # We get here is `listen` is cancelled
-                return ErrorServerLoopback(
-                    _tag="ErrorServerLoopback", message="Authentication data not set"
-                )
+                return ErrorServerLoopback(message="Authentication data not set")
 
-            if self._state["result_callback"]["_tag"] == "Success":
-                return SuccessListen(
-                    _tag="Success",
-                    data_auth=self._state["result_callback"]["data_auth"],
-                )
+            if self._state.result_callback._tag == "Success":
+                return SuccessListen(data_auth=self._state.result_callback.data_auth)
             else:
-                return self._state["result_callback"]
+                return self._state.result_callback
         finally:
             self.close()
 
     def close(self):
         try:
-            if self._state["_tag"] == "Started":
-                self._state["server_http"].shutdown()
-                self._state["server_http"].server_close()
+            if self._state._tag == "Started":
+                self._state.server_http.shutdown()
+                self._state.server_http.server_close()
 
-            if self._state["_tag"] == "Listening":
-                self._state["event_done"].set()
-                self._state["thread_server_http"].join(timeout=2.0)
-                self._state["server_http"].shutdown()
-                self._state["server_http"].server_close()
+            if self._state._tag == "Listening":
+                self._state.event_done.set()
+                self._state.thread_server_http.join(timeout=2.0)
+                self._state.server_http.shutdown()
+                self._state.server_http.server_close()
 
         finally:
-            self._state = StateClosed(_tag="Closed")
+            self._state = StateClosed()

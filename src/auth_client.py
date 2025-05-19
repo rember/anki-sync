@@ -17,9 +17,10 @@ ENDPOINT_TOKEN = f"{ISSUER_URL}/token"
 ID_CLIENT = "rember-anki-sync"
 
 
-class ErrorClientAuth(TypedDict):
-    _tag: Literal["ErrorClientAuth"]
-    message: str
+class ErrorClientAuth:
+    def __init__(self, message: str):
+        self._tag: Literal["ErrorClientAuth"] = "ErrorClientAuth"
+        self.message = message
 
 
 #: Utils
@@ -52,14 +53,16 @@ def _generate_random_state(length_bytes: int = 32) -> str:
 #: Authorize
 
 
-class Challenge(TypedDict):
-    state: str
-    verifier: str
+class Challenge:
+    def __init__(self, state: str, verifier: str):
+        self.state = state
+        self.verifier = verifier
 
 
-class ResultAuthorize(TypedDict):
-    url: str
-    challenge: Challenge
+class ResultAuthorize:
+    def __init__(self, url: str, challenge: Challenge):
+        self.url = url
+        self.challenge = challenge
 
 
 def authorize(redirect_uri: str) -> ResultAuthorize:
@@ -80,18 +83,19 @@ def authorize(redirect_uri: str) -> ResultAuthorize:
     query_string = urllib.parse.urlencode(params)
     url_authorization = f"{ENDPOINT_AUTHORIZATION}?{query_string}"
 
-    return {
-        "url": url_authorization,
-        "challenge": {"state": state, "verifier": verifier},
-    }
+    return ResultAuthorize(
+        url=url_authorization,
+        challenge=Challenge(state=state, verifier=verifier),
+    )
 
 
 #: Exchange
 
 
-class SuccessExchange(TypedDict):
-    _tag: Literal["Success"]
-    tokens: auth_tokens.Tokens
+class SuccessExchange:
+    def __init__(self, tokens: auth_tokens.Tokens):
+        self._tag: Literal["Success"] = "Success"
+        self.tokens = tokens
 
 
 ResultExchange = Union[SuccessExchange, ErrorClientAuth]
@@ -113,17 +117,13 @@ def exchange(code: str, redirect_uri: str, verifier: str) -> ResultExchange:
     if response.ok:
         data = response.json()
         return SuccessExchange(
-            _tag="Success",
             tokens=auth_tokens.Tokens(
                 access=data["access_token"],
                 refresh=data["refresh_token"],
-            ),
+            )
         )
     else:
-        return ErrorClientAuth(
-            _tag="ErrorClientAuth",
-            message="Invalid authorization code.",
-        )
+        return ErrorClientAuth(message="Invalid authorization code.")
 
 
 #: Refresh
@@ -140,10 +140,10 @@ def refresh(token_refresh: str, token_access: Optional[str] = None) -> ResultRef
     """
     if token_access:
         result_decode_token_access = auth_tokens.decode_token_access(token_access)
-        if result_decode_token_access["_tag"] == "ErrorTokens":
+        if result_decode_token_access._tag == "ErrorTokens":
             return result_decode_token_access
         # Allow 30s window for expiration
-        if result_decode_token_access["payload"]["exp"] > time.time() + 30:
+        if result_decode_token_access.payload.exp > time.time() + 30:
             return None
 
     payload = {
@@ -161,7 +161,4 @@ def refresh(token_refresh: str, token_access: Optional[str] = None) -> ResultRef
             refresh=data["refresh_token"],
         )
     else:
-        return ErrorClientAuth(
-            _tag="ErrorClientAuth",
-            message="Invalid refresh token.",
-        )
+        return ErrorClientAuth(message="Invalid refresh token.")

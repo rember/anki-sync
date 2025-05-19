@@ -31,11 +31,11 @@ def init_auth():
 
     def callback_state_auth(state: auth.StateAuth):
         action_sign_in.setEnabled(True)
-        if state["_tag"] == "LoggedOut":
+        if state._tag == "LoggedOut":
             action_sign_in.setText("Sign in")
-        if state["_tag"] == "SigningIn":
+        if state._tag == "SigningIn":
             action_sign_in.setText("Cancel sign-in")
-        if state["_tag"] == "SignedIn":
+        if state._tag == "SignedIn":
             action_sign_in.setText("Log out")
 
     _auth = auth.Auth(mw=mw, pm=mw.pm, callback_state_auth=callback_state_auth)
@@ -66,12 +66,21 @@ def on_status() -> None:
         showInfo("Logged out")
         return
 
-    result_decode_token_access = auth_tokens.decode_token_access(tokens["access"])
-    if result_decode_token_access["_tag"] == "ErrorTokens":
+    result_decode_token_access = auth_tokens.decode_token_access(tokens.access)
+    if result_decode_token_access._tag == "ErrorTokens":
         showInfo("Error decoding access token")
         return
 
-    showInfo(f'Signed in as {result_decode_token_access["payload"]["id_user"]}')
+    showInfo(f"Signed in as {result_decode_token_access.payload.id_user}")
+
+    # TODO:
+    # url = "https://www.development.rember.com/api/v1/replicache-pull-for-anki"
+    # json = {"version": "1", "versionSchema": "6", "cookie": None}
+    # headers = {"authorization": f'Bearer {tokens["access"]}'}
+    # response = requests.post(url, json=json, headers=headers)
+    # print("Response")
+    # print(f"Status: {response.status_code}")
+    # print(f"JSON: {response.json()}")
 
 
 action_status = QAction("Status")
