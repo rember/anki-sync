@@ -8,7 +8,12 @@ from aqt.profiles import ProfileManager
 
 from . import auth_client, auth_server_loopback, auth_tokens
 
-#:
+#: Types
+
+
+class StateUnknown:
+    def __init__(self):
+        self._tag: Literal["Unknown"] = "Unknown"
 
 
 class StateLoggedOut:
@@ -32,7 +37,7 @@ class StateSignedIn:
         self._tag: Literal["SignedIn"] = "SignedIn"
 
 
-StateAuth = Union[StateLoggedOut, StateSigningIn, StateSignedIn]
+StateAuth = Union[StateUnknown, StateLoggedOut, StateSigningIn, StateSignedIn]
 
 
 class SuccessOpSignIn:
@@ -48,37 +53,59 @@ ErrorSignIn = Union[
 
 ResultSignIn = Union[SuccessOpSignIn, ErrorSignIn]
 
+#:
+
 
 class Auth:
-    _state: StateAuth
+    state: StateAuth
+
+    ##: __init__
 
     def __init__(
         self,
         mw: AnkiQt,
-        pm: ProfileManager,
         callback_state_auth: Callable[[StateAuth], None],
     ):
         self._mw = mw
-        self._pm = pm
         self._callback_state_auth = callback_state_auth
 
-        tokens = auth_tokens.get_tokens(mw.pm)
-        if tokens is None:
-            self._state = StateLoggedOut()
-            callback_state_auth(self._state)
-        else:
-            self._state = StateSignedIn()
-            callback_state_auth(self._state)
+        self.state = StateUnknown()
+        self._callback_state_auth(self.state)
+
+    ##: _set_state
 
     def _set_state(self, state: StateAuth):
-        self._state = state
-        self._callback_state_auth(self._state)
+        self.state = state
+        self._callback_state_auth(self.state)
+
+    ##: close
+
+    def close(self) -> None:
+        if self.state._tag == "SigningIn":
+            self.state.server_loopback.close()
+
+        self._set_state(StateUnknown())
+
+    ##: refresh_state_from_tokens
+
+    def refresh_state_from_tokens(self):
+        tokens = auth_tokens.get_tokens(self._mw.pm)
+
+        if tokens is None and self.state._tag != "LoggedOut":
+            self._set_state(StateLoggedOut())
+            return
+
+        if tokens is not None and self.state._tag != "SignedIn":
+            self._set_state(StateSignedIn())
+            return
+
+    ##: sign_in
 
     def _sign_in_op(self):
-        if self._state._tag != "SigningIn":
-            raise RuntimeError(f"Invalid state: {self._state._tag}")
-        server_loopback = self._state.server_loopback
-        challenge = self._state.challenge
+        if self.state._tag != "SigningIn":
+            raise RuntimeError(f"Invalid state: {self.state._tag}")
+        server_loopback = self.state.server_loopback
+        challenge = self.state.challenge
 
         result_listen = server_loopback.listen()
         if result_listen._tag == "ErrorServerLoopback":
@@ -97,13 +124,13 @@ class Auth:
         return SuccessOpSignIn(tokens=result_exchange.tokens)
 
     def _sign_in_failure(self, error: Union[Exception, ErrorSignIn]):
-        if self._state._tag != "SigningIn":
-            raise RuntimeError(f"Invalid state: {self._state._tag}")
-        server_loopback = self._state.server_loopback
+        if self.state._tag != "SigningIn":
+            raise RuntimeError(f"Invalid state: {self.state._tag}")
+        server_loopback = self.state.server_loopback
 
         server_loopback.close()
 
-        auth_tokens.set_tokens(self._pm, None)
+        auth_tokens.set_tokens(self._mw.pm, None)
 
         if isinstance(error, Exception):
             show_exception(parent=self._mw, exception=error)
@@ -116,9 +143,9 @@ class Auth:
         self._set_state(StateLoggedOut())
 
     def _sign_in_success(self, result_sign_in: ResultSignIn):
-        if self._state._tag != "SigningIn":
-            raise RuntimeError(f"Invalid state: {self._state._tag}")
-        server_loopback = self._state.server_loopback
+        if self.state._tag != "SigningIn":
+            raise RuntimeError(f"Invalid state: {self.state._tag}")
+        server_loopback = self.state.server_loopback
 
         if (
             result_sign_in._tag == "ErrorClientAuth"
@@ -128,14 +155,14 @@ class Auth:
 
         server_loopback.close()
 
-        auth_tokens.set_tokens(self._pm, result_sign_in.tokens)
+        auth_tokens.set_tokens(self._mw.pm, result_sign_in.tokens)
         showInfo("Signed in to Rember successfully.")
 
         self._set_state(StateSignedIn())
 
     def sign_in(self):
-        if self._state._tag != "LoggedOut":
-            raise RuntimeError(f"Invalid state: {self._state._tag}")
+        if self.state._tag != "LoggedOut":
+            raise RuntimeError(f"Invalid state: {self.state._tag}")
 
         # Create server to receive the OAuth redirect
         server_loopback = auth_server_loopback.ServerLoopback()
@@ -163,33 +190,25 @@ class Auth:
             lambda error: self._sign_in_failure(error),
         ).without_collection().run_in_background()
 
+    ##: cancel_sign_in
+
     def cancel_sign_in(self):
-        if self._state._tag != "SigningIn":
-            raise RuntimeError(f"Invalid state: {self._state._tag}")
-        server_loopback = self._state.server_loopback
+        if self.state._tag != "SigningIn":
+            raise RuntimeError(f"Invalid state: {self.state._tag}")
+        server_loopback = self.state.server_loopback
 
         server_loopback.close()
 
         # Note that we don't set the state to LoggedOut here, since closing the
         # server will trigger `self._sign_in_failure`.
 
-    def log_out(self):
-        if self._state._tag != "SignedIn":
-            raise RuntimeError(f"Invalid state: {self._state._tag}")
+    ##: log_out
 
-        auth_tokens.set_tokens(self._pm, None)
+    def log_out(self):
+        if self.state._tag != "SignedIn":
+            raise RuntimeError(f"Invalid state: {self.state._tag}")
+
+        auth_tokens.set_tokens(self._mw.pm, None)
         showInfo("Logged out from your Rember account")
 
         self._set_state(StateLoggedOut())
-
-    def act_based_on_state(self) -> None:
-        if self._state._tag == "LoggedOut":
-            return self.sign_in()
-        if self._state._tag == "SigningIn":
-            return self.cancel_sign_in()
-        if self._state._tag == "SignedIn":
-            return self.log_out()
-
-    def close(self) -> None:
-        if self._state._tag == "SigningIn":
-            self._state.server_loopback.close()

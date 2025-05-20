@@ -17,47 +17,54 @@ from . import auth, auth_tokens
 
 #: "Sign in"/"Log out" menu item
 
-_auth: Union[auth.Auth, None] = None
-
-action_sign_in = QAction("Sign in")
-action_sign_in.setEnabled(False)
+action_auth = QAction("Sign in")
+action_auth.setEnabled(False)
 
 
-def init_auth():
-    global _auth
+def callback_state_auth(state: auth.StateAuth):
+    if state._tag == "LoggedOut":
+        action_auth.setText("Sign in")
+    if state._tag == "SigningIn":
+        action_auth.setText("Cancel sign-in")
+    if state._tag == "SignedIn":
+        action_auth.setText("Log out")
 
+
+_auth = auth.Auth(mw=mw, callback_state_auth=callback_state_auth)
+
+
+def on_action_auth():
+    if _auth.state._tag == "LoggedOut":
+        return _auth.sign_in()
+    if _auth.state._tag == "SigningIn":
+        return _auth.cancel_sign_in()
+    if _auth.state._tag == "SignedIn":
+        return _auth.log_out()
+
+
+qconnect(action_auth.triggered, on_action_auth)
+
+
+def refresh_auth():
     if mw.pm is None:
         raise Exception("ProfileManager not defined")
 
-    def callback_state_auth(state: auth.StateAuth):
-        action_sign_in.setEnabled(True)
-        if state._tag == "LoggedOut":
-            action_sign_in.setText("Sign in")
-        if state._tag == "SigningIn":
-            action_sign_in.setText("Cancel sign-in")
-        if state._tag == "SignedIn":
-            action_sign_in.setText("Log out")
-
-    _auth = auth.Auth(mw=mw, pm=mw.pm, callback_state_auth=callback_state_auth)
-
-    qconnect(action_sign_in.triggered, _auth.act_based_on_state)
+    _auth.refresh_state_from_tokens()
+    action_auth.setEnabled(True)
 
 
 def close_auth():
-    global _auth
-
-    if _auth is not None:
-        _auth.close()
-    _auth = None
+    action_auth.setEnabled(False)
+    _auth.close()
 
 
-gui_hooks.profile_did_open.append(init_auth)
+gui_hooks.profile_did_open.append(refresh_auth)
 gui_hooks.profile_will_close.append(close_auth)
 
 #: "Status" menu item
 
 
-def on_status() -> None:
+def on_action_status() -> None:
     if mw.pm is None:
         raise Exception("ProfileManager not defined")
 
@@ -84,17 +91,17 @@ def on_status() -> None:
 
 
 action_status = QAction("Status")
-qconnect(action_status.triggered, on_status)
+qconnect(action_status.triggered, on_action_status)
 
 #: "Help" menu item
 
 
-def on_help() -> None:
+def on_action_help() -> None:
     openLink("mailto:support@rember.com")
 
 
 action_help = QAction("Help")
-qconnect(action_help.triggered, on_help)
+qconnect(action_help.triggered, on_action_help)
 
 #: "Rember" menu
 
@@ -102,6 +109,6 @@ if mw.pm is not None:
     menu_rember = mw.form.menuTools.addMenu("Rember")
     assert menu_rember is not None
 
-    menu_rember.addAction(action_sign_in)
+    menu_rember.addAction(action_auth)
     menu_rember.addAction(action_status)
     menu_rember.addAction(action_help)
