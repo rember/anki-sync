@@ -128,9 +128,17 @@ def exchange(code: str, redirect_uri: str, verifier: str) -> ResultExchange:
 
 #: Refresh
 
-ResultRefresh = Union[
-    None, auth_tokens.Tokens, ErrorClientAuth, auth_tokens.ErrorTokens
-]
+
+class SuccessRefresh:
+    def __init__(self, tokens: auth_tokens.Tokens | None):
+        self._tag: Literal["Success"] = "Success"
+        self.tokens = tokens
+
+
+ErrorRefresh = Union[ErrorClientAuth, auth_tokens.ErrorTokens]
+
+
+ResultRefresh = Union[SuccessRefresh, ErrorRefresh]
 
 
 def refresh(token_refresh: str, token_access: Optional[str] = None) -> ResultRefresh:
@@ -144,7 +152,7 @@ def refresh(token_refresh: str, token_access: Optional[str] = None) -> ResultRef
             return result_decode_token_access
         # Allow 30s window for expiration
         if result_decode_token_access.payload.exp > time.time() + 30:
-            return None
+            return SuccessRefresh(tokens=None)
 
     payload = {
         "grant_type": "refresh_token",
@@ -156,9 +164,11 @@ def refresh(token_refresh: str, token_access: Optional[str] = None) -> ResultRef
 
     if response.ok:
         data = response.json()
-        return auth_tokens.Tokens(
-            access=data["access_token"],
-            refresh=data["refresh_token"],
+        return SuccessRefresh(
+            tokens=auth_tokens.Tokens(
+                access=data["access_token"],
+                refresh=data["refresh_token"],
+            )
         )
     else:
         return ErrorClientAuth(message="Invalid refresh token.")
