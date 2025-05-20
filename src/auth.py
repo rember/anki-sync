@@ -8,7 +8,7 @@ from aqt.profiles import ProfileManager
 
 from . import auth_client, auth_server_loopback, auth_tokens
 
-#: Types
+#:
 
 
 class StateUnknown:
@@ -137,6 +137,7 @@ class Auth:
         auth_tokens.set_tokens(self._mw.pm, None)
         self._set_state(StateLoggedOut())
 
+        print(error)
         if isinstance(error, Exception):
             show_exception(parent=self._mw, exception=error)
         else:
@@ -213,52 +214,30 @@ class Auth:
 
         self._set_state(StateLoggedOut())
 
-    ##: refresh_token
+    ##: refresh_tokens
 
-    def _refresh_token_op(self):
+    # This does not use QueryOp, because it's not possible to compose QueryOp
+    # and we usually refresh the tokens before making a request to the Rember
+    # API in the background.
+    def refresh_tokens(self):
         if self.state._tag != "SignedIn":
             raise RuntimeError(f"Invalid state: {self.state._tag}")
         tokens = self.state.tokens
 
-        return auth_client.refresh(
+        result_refresh = auth_client.refresh(
             token_refresh=tokens.refresh, token_access=tokens.access
         )
 
-    def _refresh_token_failure(self, error: Union[Exception, auth_client.ErrorRefresh]):
-        if self.state._tag != "SignedIn":
-            raise RuntimeError(f"Invalid state: {self.state._tag}")
+        if result_refresh._tag != "Success":
+            auth_tokens.set_tokens(self._mw.pm, None)
+            self._set_state(StateLoggedOut())
 
-        auth_tokens.set_tokens(self._mw.pm, None)
-        self._set_state(StateLoggedOut())
-
-        if isinstance(error, Exception):
-            show_exception(parent=self._mw, exception=error)
-        else:
             show_exception(
                 parent=self._mw,
-                exception=Exception(f"{error._tag}: {error.message}"),
+                exception=Exception(f"{result_refresh._tag}: {result_refresh.message}"),
             )
-
-    def _refresh_token_success(self, result_refresh: auth_client.ResultRefresh):
-        if self.state._tag != "SignedIn":
-            raise RuntimeError(f"Invalid state: {self.state._tag}")
-
-        if result_refresh._tag != "Success":
-            return self._refresh_token_failure(error=result_refresh)
-
-        if result_refresh.tokens is not None:
+        elif result_refresh.tokens is not None:
             auth_tokens.set_tokens(self._mw.pm, result_refresh.tokens)
             self._set_state(StateSignedIn(result_refresh.tokens))
 
-    def refresh_token(self):
-        if self.state._tag != "SignedIn":
-            raise RuntimeError(f"Invalid state: {self.state._tag}")
-
-        # Refresh the auth tokens in the background
-        QueryOp(
-            parent=self._mw,
-            op=lambda _: self._refresh_token_op(),
-            success=lambda result_refresh: self._refresh_token_success(result_refresh),
-        ).failure(
-            lambda error: self._sign_in_failure(error),
-        ).without_collection().run_in_background()
+        return result_refresh

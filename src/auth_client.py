@@ -130,7 +130,7 @@ def exchange(code: str, redirect_uri: str, verifier: str) -> ResultExchange:
 
 
 class SuccessRefresh:
-    def __init__(self, tokens: auth_tokens.Tokens | None):
+    def __init__(self, tokens: Union[auth_tokens.Tokens, None]):
         self._tag: Literal["Success"] = "Success"
         self.tokens = tokens
 

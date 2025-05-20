@@ -5,7 +5,7 @@
 
 import base64
 import json
-from typing import Literal, Optional, TypedDict, Union
+from typing import Literal, Optional, Union
 
 from aqt.profiles import ProfileManager
 

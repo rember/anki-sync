@@ -7,13 +7,15 @@ if anki_version < required_anki_version:
         f"Minimum Anki version supported: {required_anki_version[0]}.{required_anki_version[1]}.{required_anki_version[2]}"
     )
 
-from typing import Union
-
 from aqt import gui_hooks, mw
 from aqt.qt import QAction, qconnect
 from aqt.utils import openLink, showInfo
 
-from . import auth, auth_tokens
+from . import auth, auth_tokens, puller, user_files
+
+#:
+
+_user_files = user_files.UserFiles()
 
 #: "Sign in"/"Log out" menu item
 
@@ -63,6 +65,8 @@ gui_hooks.profile_will_close.append(close_auth)
 
 #: "Status" menu item
 
+_puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
+
 
 def on_action_status() -> None:
     if mw.pm is None:
@@ -80,14 +84,7 @@ def on_action_status() -> None:
 
     showInfo(f"Signed in as {result_decode_token_access.payload.id_user}")
 
-    # TODO:
-    # url = "https://www.development.rember.com/api/v1/replicache-pull-for-anki"
-    # json = {"version": "1", "versionSchema": "6", "cookie": None}
-    # headers = {"authorization": f'Bearer {tokens["access"]}'}
-    # response = requests.post(url, json=json, headers=headers)
-    # print("Response")
-    # print(f"Status: {response.status_code}")
-    # print(f"JSON: {response.json()}")
+    _puller.pull()
 
 
 action_status = QAction("Status")
