@@ -11,11 +11,12 @@ from aqt import gui_hooks, mw
 from aqt.qt import QAction, qconnect
 from aqt.utils import openLink, showInfo
 
-from . import auth, auth_tokens, puller, user_files
+from . import auth, auth_tokens, puller, user_files, version
 
 #:
 
 _user_files = user_files.UserFiles()
+_user_files.set("version_rember_anki_sync", version.VERSION_REMBER_ANKI_SYNC)
 
 #: "Sign in"/"Log out" menu item
 

@@ -11,7 +11,7 @@ class UserFiles:
 
         dir_addon = os.path.dirname(os.path.realpath(__file__))
         dir_user_files = os.path.join(dir_addon, "user_files")
-        print("USER FILES", dir_user_files)
+
         if not os.path.exists(dir_user_files):
             raise FileNotFoundError(f"Directory '{dir_user_files}' does not exist")
         self.file_data_json = os.path.join(dir_user_files, "data.json")
