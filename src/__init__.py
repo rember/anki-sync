@@ -11,17 +11,22 @@ from aqt import gui_hooks, mw
 from aqt.qt import QAction, qconnect
 from aqt.utils import openLink, showInfo
 
-from . import auth, puller, user_files, version, puller_user
-
-#: Allow access to app-anki files to the webviews
-# REFS: https://addon-docs.ankiweb.net/hooks-and-filters.html#managing-external-resources-in-webviews
-
-mw.addonManager.setWebExports(__name__, r"app-anki/.*(css|js)")
+from . import auth, model_rember, puller, puller_user, user_files, version
 
 #: Create UserFiles
 
 _user_files = user_files.UserFiles()
 _user_files.set("version_rember_anki_sync", version.VERSION_REMBER_ANKI_SYNC)
+
+#: Setup Rember model
+
+# Allow access to app-anki files to the webviews
+# REFS: https://addon-docs.ankiweb.net/hooks-and-filters.html#managing-external-resources-in-webviews
+mw.addonManager.setWebExports(__name__, r"app_anki/.*(css|js)")
+
+# Create the Rember model
+gui_hooks.collection_did_load.append(lambda _: model_rember.create_rember_model())
+
 
 #: "Sign in"/"Log out" menu item
 
