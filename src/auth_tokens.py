@@ -9,6 +9,8 @@ from typing import Literal, Optional, Union
 
 from aqt.profiles import ProfileManager
 
+#:
+
 
 class Tokens:
     def __init__(self, access: str, refresh: str):
@@ -28,6 +30,9 @@ class ErrorTokens:
         self.message = message
 
 
+#: set_tokens
+
+
 def set_tokens(pm: ProfileManager, tokens: Optional[Tokens]) -> None:
     assert pm.profile is not None
     if tokens:
@@ -36,6 +41,9 @@ def set_tokens(pm: ProfileManager, tokens: Optional[Tokens]) -> None:
     else:
         pm.profile["thirdPartyRemberTokenAccess"] = None
         pm.profile["thirdPartyRemberTokenRefresh"] = None
+
+
+#: get_tokens
 
 
 def get_tokens(pm: ProfileManager) -> Optional[Tokens]:
@@ -47,6 +55,9 @@ def get_tokens(pm: ProfileManager) -> Optional[Tokens]:
         return None
 
     return Tokens(access=token_access, refresh=token_refresh)
+
+
+#: decode_token_access
 
 
 class SuccessDecodeTokenAccess:

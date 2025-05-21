@@ -50,7 +50,7 @@ def _generate_random_state(length_bytes: int = 32) -> str:
     return secrets.token_urlsafe(length_bytes)
 
 
-#: Authorize
+#: authorize
 
 
 class Challenge:
@@ -89,7 +89,7 @@ def authorize(redirect_uri: str) -> ResultAuthorize:
     )
 
 
-#: Exchange
+#: exchange
 
 
 class SuccessExchange:
@@ -126,7 +126,7 @@ def exchange(code: str, redirect_uri: str, verifier: str) -> ResultExchange:
         return ErrorClientAuth(message="Invalid authorization code.")
 
 
-#: Refresh
+#: refresh
 
 
 class SuccessRefresh:

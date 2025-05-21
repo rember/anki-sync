@@ -6,6 +6,8 @@ from aqt.main import AnkiQt
 from aqt.operations import QueryOp
 
 from . import auth, auth_client, auth_tokens, rember_client, user_files
+from .puller_user import put_user, del_user, clear_users
+from .puller_remb import put_remb, del_remb, clear_rembs
 
 #:
 
@@ -33,18 +35,44 @@ class Puller:
             tokens = result_refresh.tokens
 
         # Get the stored cookie or None if not found
-        cookie_replicache = self._user_files.get("cookie_replicache")
+        # TODO: cookie_replicache = self._user_files.get("cookie_replicache")
+        cookie_replicache = None
 
         # Pull
         result_replicache_pull_for_anki = rember_client.replicache_pull_for_anki(
             cookie_replicache=cookie_replicache, token_access=tokens.access
         )
+        if result_replicache_pull_for_anki._tag != "Success":
+            return result_replicache_pull_for_anki
 
         # Store the new cookie for future pulls if successful
-        if result_replicache_pull_for_anki._tag == "Success":
-            self._user_files.set(
-                "cookie_replicache", result_replicache_pull_for_anki.cookie
-            )
+        self._user_files.set(
+            "cookie_replicache", result_replicache_pull_for_anki.cookie
+        )
+
+        # Process patch
+        patch = result_replicache_pull_for_anki.patch
+        # Handle clear operation if it's the first operation
+        if patch[0]["op"] == "clear":
+            clear_users(self._user_files, patch)
+            clear_rembs(self._user_files, patch)
+            return result_replicache_pull_for_anki
+        # Process other operations
+        for op in patch:
+            if op["op"] == "clear":
+                raise RuntimeError(
+                    "Clear operation must be the first operation in the patch"
+                )
+            if op["op"] == "put":
+                if op["key"].startswith("User/"):
+                    put_user(self._user_files, op["key"], op["value"])
+                if op["key"].startswith("Remb/"):
+                    put_remb(self._user_files, op["key"], op["value"])
+            elif op["op"] == "del":
+                if op["key"].startswith("User/"):
+                    del_user(self._user_files, op["key"])
+                if op["key"].startswith("Remb/"):
+                    del_remb(self._user_files, op["key"])
 
         return result_replicache_pull_for_anki
 
@@ -99,5 +127,5 @@ class Puller:
         ).failure(
             lambda error: self._pull_failure(error),
         ).with_progress(
-            "Pulling Rember data..."
-        ).without_collection().run_in_background()
+            "Syncing Rember data..."
+        ).run_in_background()
