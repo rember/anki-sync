@@ -11,7 +11,7 @@ from aqt import gui_hooks, mw
 from aqt.qt import QAction, qconnect
 from aqt.utils import openLink, showInfo
 
-from . import auth, auth_tokens, puller, user_files, version
+from . import auth, puller, user_files, version, puller_user
 
 #:
 
@@ -70,22 +70,21 @@ _puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
 
 
 def on_action_status() -> None:
+
     if mw.pm is None:
         raise Exception("ProfileManager not defined")
 
-    tokens = auth_tokens.get_tokens(mw.pm)
-    if tokens is None:
-        showInfo("Logged out")
+    if _auth.state._tag == "LoggedOut" or _auth.state._tag == "SigningIn":
+        showInfo("Logged out.")
         return
 
-    result_decode_token_access = auth_tokens.decode_token_access(tokens.access)
-    if result_decode_token_access._tag == "ErrorTokens":
-        showInfo("Error decoding access token")
+    email = puller_user.get_user_email(_user_files)
+
+    if email is None:
+        showInfo('Signed in, press the "Sync" button to sync Rember data.')
         return
 
-    showInfo(f"Signed in as {result_decode_token_access.payload.id_user}")
-
-    _puller.pull()
+    showInfo(f"Signed in as {email}")
 
 
 action_status = QAction("Status")
