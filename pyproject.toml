@@ -1,10 +1,5 @@
 [project]
 name = "rember-anki-sync"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
 requires-python = ">=3.9"
-dependencies = [
-    "anki>=25.2.5",
-    "aqt>=25.2.5",
-]
+dependencies = ["anki>=25.2.5", "aqt>=25.2.5"]

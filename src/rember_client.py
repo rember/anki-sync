@@ -2,6 +2,8 @@ from typing import Literal, TypedDict, Union
 
 import requests
 
+from . import version
+
 #: Shared
 
 BASE_URL = "https://www.development.rember.com"
@@ -51,6 +53,7 @@ def replicache_pull_for_anki(
 ) -> ResultReplicachePullForAnki:
     payload = {
         "version": "1",
+        "versionAddonRemberAnkiSync": version.VERSION_REMBER_ANKI_SYNC,
         "versionSchema": VERSION_SCHEMA_REPLICACHE,
         "cookie": cookie_replicache,
     }

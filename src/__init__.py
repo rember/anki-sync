@@ -13,7 +13,12 @@ from aqt.utils import openLink, showInfo
 
 from . import auth, puller, user_files, version, puller_user
 
-#:
+#: Allow access to app-anki files to the webviews
+# REFS: https://addon-docs.ankiweb.net/hooks-and-filters.html#managing-external-resources-in-webviews
+
+mw.addonManager.setWebExports(__name__, r"app-anki/.*(css|js)")
+
+#: Create UserFiles
 
 _user_files = user_files.UserFiles()
 _user_files.set("version_rember_anki_sync", version.VERSION_REMBER_ANKI_SYNC)

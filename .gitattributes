@@ -1,0 +1,5 @@
+src/app_anki/ filter=lfs diff=lfs merge=lfs -text
+src/app_anki/app-anki.css filter=lfs diff=lfs merge=lfs -text
+src/app_anki/app-anki.js filter=lfs diff=lfs merge=lfs -text
+src/app_anki/app-anki.umd.cjs filter=lfs diff=lfs merge=lfs -text
+src/app_anki/katex-BBtz5V9r.js filter=lfs diff=lfs merge=lfs -text
