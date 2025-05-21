@@ -1,3 +1,4 @@
+import json
 from typing import Union
 
 from aqt.errors import show_exception
@@ -26,13 +27,15 @@ class Puller:
 
         # Refresh the auth tokens
         result_refresh = self._auth.refresh_tokens()
-
         if result_refresh._tag != "Success":
             return result_refresh
+        if result_refresh.tokens is not None:
+            tokens = result_refresh.tokens
 
         # Get the stored cookie or None if not found
         cookie_replicache = self._user_files.get("cookie_replicache")
 
+        # Pull
         result_replicache_pull_for_anki = rember_client.replicache_pull_for_anki(
             cookie_replicache=cookie_replicache, token_access=tokens.access
         )
@@ -82,7 +85,7 @@ class Puller:
 
         # TODO:
         print(f"Cookie: {result_replicache_pull_for_anki.cookie}")
-        print(f"Patch: {result_replicache_pull_for_anki.patch}")
+        print(f"Patch: {json.dumps(result_replicache_pull_for_anki.patch, indent=2)}")
 
     def pull(self):
         if self._auth.state._tag != "SignedIn":
