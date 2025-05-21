@@ -110,3 +110,10 @@ if mw.pm is not None:
     menu_rember.addAction(action_auth)
     menu_rember.addAction(action_status)
     menu_rember.addAction(action_help)
+
+#: Pull before sync
+
+# WARN: We want to pull from Rember before syncing, so that the changes are
+# are synced. In order for this to work as we expect, we rely on background
+# operations that access collection being serialized in Anki.
+gui_hooks.sync_will_start.append(_puller.pull)

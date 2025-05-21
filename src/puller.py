@@ -111,9 +111,9 @@ class Puller:
         if result_replicache_pull_for_anki._tag != "Success":
             return self._pull_failure(error=result_replicache_pull_for_anki)
 
-        # TODO:
-        print(f"Cookie: {result_replicache_pull_for_anki.cookie}")
-        print(f"Patch: {json.dumps(result_replicache_pull_for_anki.patch, indent=2)}")
+        # # TODO:
+        # print(f"Cookie: {result_replicache_pull_for_anki.cookie}")
+        # print(f"Patch: {json.dumps(result_replicache_pull_for_anki.patch, indent=2)}")
 
     def pull(self):
         if self._auth.state._tag != "SignedIn":

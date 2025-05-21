@@ -5,18 +5,18 @@ from .rember_client import Patch
 
 
 def put_remb(user_files: UserFiles, key: str, value: dict) -> None:
-    print("TODO")
+    print("TODO put_remb")
 
 
 #: del_remb
 
 
 def del_remb(user_files: UserFiles, key: str) -> None:
-    print("TODO")
+    print("TODO del_user")
 
 
 #: clear_rembs
 
 
 def clear_rembs(user_files: UserFiles, patch: Patch) -> None:
-    print("TODO")
+    print("TODO clear_rembs")
