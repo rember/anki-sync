@@ -8,10 +8,20 @@ if anki_version < required_anki_version:
     )
 
 from aqt import gui_hooks, mw
+from aqt.errors import show_exception
 from aqt.qt import QAction, qconnect
 from aqt.utils import openLink, showInfo
 
-from . import auth, deck_rember, model_rember, puller, puller_user, user_files, version
+from . import (
+    auth,
+    auth_tokens,
+    deck_rember,
+    model_rember,
+    puller,
+    user_files,
+    users,
+    version,
+)
 
 #: Setup
 
@@ -85,15 +95,30 @@ _puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
 
 
 def on_action_status() -> None:
-
     if mw.pm is None:
         raise Exception("ProfileManager not defined")
+
+    if _auth.state._tag == "Unknown":
+        return
 
     if _auth.state._tag == "LoggedOut" or _auth.state._tag == "SigningIn":
         showInfo("Logged out.")
         return
 
-    email = puller_user.get_user_email(_user_files)
+    result_decode_token_access = auth_tokens.decode_token_access(
+        _auth.state.tokens.access
+    )
+    if result_decode_token_access._tag != "Success":
+        show_exception(
+            parent=mw,
+            exception=Exception(
+                f"{result_decode_token_access._tag}: {result_decode_token_access.message}"
+            ),
+        )
+        return
+
+    _users = users.Users(user_files=_user_files)
+    email = _users.get_email_user(id_user=result_decode_token_access.payload.id_user)
 
     if email is None:
         showInfo('Signed in, press the "Sync" button to sync Rember data.')

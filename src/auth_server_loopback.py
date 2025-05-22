@@ -1,10 +1,10 @@
-import threading
 import functools
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import urlparse, parse_qs
-from typing import Optional, Tuple, Any, Callable, Union, Literal, TypedDict
-import socket
 import html
+import socket
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any, Callable, Literal, Optional, Tuple, Union
+from urllib.parse import parse_qs, urlparse
 
 #: Handler
 

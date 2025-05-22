@@ -1,13 +1,10 @@
-import json
 from typing import Union
 
 from aqt.errors import show_exception
 from aqt.main import AnkiQt
 from aqt.operations import QueryOp
 
-from . import auth, auth_client, auth_tokens, rember_client, user_files
-from .puller_user import put_user, del_user, clear_users
-from .puller_remb import put_remb, del_remb, clear_rembs
+from . import auth, auth_client, auth_tokens, rember_client, rembs, user_files, users
 
 #:
 
@@ -25,6 +22,8 @@ class Puller:
     def _pull_op(self):
         if self._auth.state._tag != "SignedIn":
             raise RuntimeError(f"Invalid auth state: {self._auth.state._tag}")
+        if self._mw.col is None:
+            raise RuntimeError("Collection is None")
         tokens = self._auth.state.tokens
 
         # Refresh the auth tokens
@@ -52,27 +51,10 @@ class Puller:
 
         # Process patch
         patch = result_replicache_pull_for_anki.patch
-        # Handle clear operation if it's the first operation
-        if patch[0]["op"] == "clear":
-            clear_users(self._user_files, patch)
-            clear_rembs(self._user_files, patch)
-            return result_replicache_pull_for_anki
-        # Process other operations
-        for op in patch:
-            if op["op"] == "clear":
-                raise RuntimeError(
-                    "Clear operation must be the first operation in the patch"
-                )
-            if op["op"] == "put":
-                if op["key"].startswith("User/"):
-                    put_user(self._user_files, op["key"], op["value"])
-                if op["key"].startswith("Remb/"):
-                    put_remb(self._user_files, op["key"], op["value"])
-            elif op["op"] == "del":
-                if op["key"].startswith("User/"):
-                    del_user(self._user_files, op["key"])
-                if op["key"].startswith("Remb/"):
-                    del_remb(self._user_files, op["key"])
+        _users = users.Users(user_files=self._user_files)
+        _users.process_patch(patch)
+        _rembs = rembs.Rembs(col=self._mw.col)
+        _rembs.process_patch(patch)
 
         return result_replicache_pull_for_anki
 

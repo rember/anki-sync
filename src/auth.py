@@ -4,7 +4,6 @@ from aqt.main import AnkiQt
 from aqt.errors import show_exception
 from aqt.operations import QueryOp
 from aqt.utils import openLink, showInfo
-from aqt.profiles import ProfileManager
 
 from . import auth_client, auth_server_loopback, auth_tokens
 

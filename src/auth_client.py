@@ -3,7 +3,7 @@ import hashlib
 import secrets
 import time
 import urllib.parse
-from typing import Literal, Optional, TypedDict, Union
+from typing import Literal, Optional, Union
 
 import requests
 
