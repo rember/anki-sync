@@ -34,8 +34,7 @@ class Puller:
             tokens = result_refresh.tokens
 
         # Get the stored cookie or None if not found
-        # TODO: cookie_replicache = self._user_files.get("cookie_replicache")
-        cookie_replicache = None
+        cookie_replicache = self._user_files.get("cookie_replicache")
 
         # Pull
         result_replicache_pull_for_anki = puller_client.replicache_pull_for_anki(
@@ -92,10 +91,6 @@ class Puller:
 
         if result_replicache_pull_for_anki._tag != "Success":
             return self._pull_failure(error=result_replicache_pull_for_anki)
-
-        # # TODO:
-        # print(f"Cookie: {result_replicache_pull_for_anki.cookie}")
-        # print(f"Patch: {json.dumps(result_replicache_pull_for_anki.patch, indent=2)}")
 
     def pull(self):
         if self._auth.state._tag != "SignedIn":
