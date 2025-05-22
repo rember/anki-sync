@@ -11,7 +11,7 @@ ENDPOINT_REPLICACHE_PULL_FOR_ANKI = f"{BASE_URL}/api/v1/replicache-pull-for-anki
 VERSION_SCHEMA_REPLICACHE = "6"
 
 
-class ErrorClientRember:
+class ErrorClientPuller:
     def __init__(self, message: str):
         self._tag: Literal["ErrorClientRember"] = "ErrorClientRember"
         self.message = message
@@ -45,7 +45,7 @@ class SuccessReplicachePullForAnki:
         self.patch = patch
 
 
-ResultReplicachePullForAnki = Union[SuccessReplicachePullForAnki, ErrorClientRember]
+ResultReplicachePullForAnki = Union[SuccessReplicachePullForAnki, ErrorClientPuller]
 
 
 def replicache_pull_for_anki(
@@ -68,9 +68,9 @@ def replicache_pull_for_anki(
             data = response.json()
             return _decode_response_replicache_pull_for_anki(data)
         except Exception as e:
-            return ErrorClientRember(message=f"Invalid response: {str(e)}")
+            return ErrorClientPuller(message=f"Invalid response: {str(e)}")
     else:
-        return ErrorClientRember(
+        return ErrorClientPuller(
             message=f"Request failed with status {response.status_code}: {response.text}"
         )
 

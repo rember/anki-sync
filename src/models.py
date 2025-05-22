@@ -1,4 +1,7 @@
-# TODO: document that this file creates a global Rember model which renders rembs
+# This file creates a global Rember note type (model) which defines the fields and templates
+# used to generate cards from rembs imported from Rember.com. The model is created when
+# the add-on loads and contains fields for storing remb data and templates that determine
+# how cards are displayed during review.
 from aqt import mw
 
 #: Constants

@@ -1,5 +1,6 @@
-# TODO: document that this file creates a global Rember deck which contains all
-# of the user's rembs
+# This file creates a global Rember deck which contains all of the user's rembs
+# imported from Rember.com. The deck is created when the add-on loads and is
+# used as the destination for all synced content.
 
 from aqt import mw
 

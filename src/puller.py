@@ -4,7 +4,7 @@ from aqt.errors import show_exception
 from aqt.main import AnkiQt
 from aqt.operations import QueryOp
 
-from . import auth, auth_client, auth_tokens, rember_client, rembs, user_files, users
+from . import auth, auth_client, auth_tokens, puller_client, rembs, user_files, users
 
 #:
 
@@ -38,7 +38,7 @@ class Puller:
         cookie_replicache = None
 
         # Pull
-        result_replicache_pull_for_anki = rember_client.replicache_pull_for_anki(
+        result_replicache_pull_for_anki = puller_client.replicache_pull_for_anki(
             cookie_replicache=cookie_replicache, token_access=tokens.access
         )
         if result_replicache_pull_for_anki._tag != "Success":
@@ -62,7 +62,7 @@ class Puller:
         self,
         error: Union[
             Exception,
-            rember_client.ErrorClientRember,
+            puller_client.ErrorClientPuller,
             auth_client.ErrorClientAuth,
             auth_tokens.ErrorTokens,
         ],
@@ -82,7 +82,7 @@ class Puller:
     def _pull_success(
         self,
         result_replicache_pull_for_anki: Union[
-            rember_client.ResultReplicachePullForAnki,
+            puller_client.ResultReplicachePullForAnki,
             auth_client.ErrorClientAuth,
             auth_tokens.ErrorTokens,
         ],

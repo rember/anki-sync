@@ -3,8 +3,8 @@ from typing import Optional
 
 from anki import collection, notes
 
-from . import deck_rember, model_rember
-from .rember_client import Patch
+from . import decks, models
+from .puller_client import Patch
 
 #:
 
@@ -13,8 +13,8 @@ class Rembs:
 
     def __init__(self, col: collection.Collection):
         self._col = col
-        self._notetype = model_rember.get_model_rember()
-        self._deck = deck_rember.get_deck_rember()
+        self._notetype = models.get_model_rember()
+        self._deck = decks.get_deck_rember()
 
     ##: process_patch
 
@@ -132,23 +132,23 @@ class Rembs:
         self, note: notes.Note, id_remb: str, content_remb: dict, ids_card: list[str]
     ):
         field_link = f"""<a href="https://rember.com/r/${id_remb}">Edit in Rember (Remb ${id_remb})</a>"""
-        note[model_rember.NAME_FIELD_LINK] = field_link
+        note[models.NAME_FIELD_LINK] = field_link
 
         field_note = content_remb["note"]["text"]["textPlain"]
         if not isinstance(field_note, str):
             raise ValueError("Invalid remb content, 'textPlain' not found.")
-        note[model_rember.NAME_FIELD_NOTE] = field_note
+        note[models.NAME_FIELD_NOTE] = field_note
 
-        field_data = model_rember.wrap_field_data(json.dumps(content_remb))
-        note[model_rember.NAME_FIELD_DATA] = field_data
+        field_data = models.wrap_field_data(json.dumps(content_remb))
+        note[models.NAME_FIELD_DATA] = field_data
 
         # TODO: Try to use `tsCreated` to make this more robust to note updates
         for ix, id_card in enumerate(ids_card):
             field_id_card = id_card if ix < len(ids_card) else ""
-            note[model_rember.NAME_FIELD_ID_CARD(ix)] = field_id_card
+            note[models.NAME_FIELD_ID_CARD(ix)] = field_id_card
 
         field_media = ""  # Media are currently not supported in Rember
-        note[model_rember.NAME_FIELD_MEDIA] = field_media
+        note[models.NAME_FIELD_MEDIA] = field_media
 
     ##: Utils
 

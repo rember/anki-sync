@@ -12,16 +12,7 @@ from aqt.errors import show_exception
 from aqt.qt import QAction, qconnect
 from aqt.utils import openLink, showInfo
 
-from . import (
-    auth,
-    auth_tokens,
-    deck_rember,
-    model_rember,
-    puller,
-    user_files,
-    users,
-    version,
-)
+from . import auth, auth_tokens, decks, models, puller, user_files, users, version
 
 #: Setup
 
@@ -36,8 +27,8 @@ mw.addonManager.setWebExports(__name__, r"app_anki/.*(css|js)")
 
 # Create the "Rember X.X.X" model and the "Rember" deck
 def on_load(_):
-    model_rember.create_model_rember()
-    deck_rember.create_deck_rember()
+    models.create_model_rember()
+    decks.create_deck_rember()
 
 
 gui_hooks.collection_did_load.append(on_load)
