@@ -4,7 +4,16 @@ from aqt.errors import show_exception
 from aqt.main import AnkiQt
 from aqt.operations import QueryOp
 
-from . import auth, auth_client, auth_tokens, puller_client, rembs, user_files, users
+from . import (
+    auth,
+    auth_client,
+    auth_tokens,
+    puller_cookie_replicache,
+    puller_client,
+    rembs,
+    user_files,
+    users,
+)
 
 #:
 
@@ -16,6 +25,9 @@ class Puller:
         self._mw = mw
         self._auth = auth
         self._user_files = user_files
+        self._cookies_replicache = puller_cookie_replicache.CookieReplicache(
+            user_files=self._user_files
+        )
 
     ##: pull
 
@@ -34,7 +46,7 @@ class Puller:
             tokens = result_refresh.tokens
 
         # Get the stored cookie or None if not found
-        cookie_replicache = self._user_files.get("cookie_replicache")
+        cookie_replicache = self._cookies_replicache.get()
 
         # Pull
         result_replicache_pull_for_anki = puller_client.replicache_pull_for_anki(
@@ -44,9 +56,7 @@ class Puller:
             return result_replicache_pull_for_anki
 
         # Store the new cookie for future pulls if successful
-        self._user_files.set(
-            "cookie_replicache", result_replicache_pull_for_anki.cookie
-        )
+        self._cookies_replicache.set(result_replicache_pull_for_anki.cookie)
 
         # Process patch
         patch = result_replicache_pull_for_anki.patch

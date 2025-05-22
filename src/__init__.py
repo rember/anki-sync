@@ -12,12 +12,23 @@ from aqt.errors import show_exception
 from aqt.qt import QAction, qconnect
 from aqt.utils import openLink, showInfo
 
-from . import auth, auth_tokens, decks, models, puller, user_files, users, version
+from . import (
+    auth,
+    auth_tokens,
+    decks,
+    models,
+    puller,
+    puller_cookie_replicache,
+    user_files,
+    users,
+    version,
+)
 
 #: Setup
 
 _user_files = user_files.UserFiles()
 _user_files.set("version_rember_anki_sync", version.VERSION_REMBER_ANKI_SYNC)
+_cookie_replicache = puller_cookie_replicache.CookieReplicache(user_files=_user_files)
 
 
 # Allow access to app-anki files to the webviews
@@ -34,7 +45,7 @@ def on_load(_):
 gui_hooks.collection_did_load.append(on_load)
 
 
-#: "Sign in"/"Log out" menu item
+#: Setup auth / "Sign in"/"Log out" menu item
 
 action_auth = QAction("Sign in")
 action_auth.setEnabled(False)
@@ -43,6 +54,9 @@ action_auth.setEnabled(False)
 def callback_state_auth(state: auth.StateAuth):
     if state._tag == "LoggedOut":
         action_auth.setText("Sign in")
+        # Clear cookie_replicache, so that we pull from scratch next time the
+        # user signs in
+        _cookie_replicache.reset()
     if state._tag == "SigningIn":
         action_auth.setText("Cancel sign-in")
     if state._tag == "SignedIn":
@@ -50,18 +64,6 @@ def callback_state_auth(state: auth.StateAuth):
 
 
 _auth = auth.Auth(mw=mw, callback_state_auth=callback_state_auth)
-
-
-def on_action_auth():
-    if _auth.state._tag == "LoggedOut":
-        return _auth.sign_in()
-    if _auth.state._tag == "SigningIn":
-        return _auth.cancel_sign_in()
-    if _auth.state._tag == "SignedIn":
-        return _auth.log_out()
-
-
-qconnect(action_auth.triggered, on_action_auth)
 
 
 def refresh_auth():
@@ -80,9 +82,19 @@ def close_auth():
 gui_hooks.profile_did_open.append(refresh_auth)
 gui_hooks.profile_will_close.append(close_auth)
 
-#: "Status" menu item
 
-_puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
+def on_action_auth():
+    if _auth.state._tag == "LoggedOut":
+        return _auth.sign_in()
+    if _auth.state._tag == "SigningIn":
+        return _auth.cancel_sign_in()
+    if _auth.state._tag == "SignedIn":
+        return _auth.log_out()
+
+
+qconnect(action_auth.triggered, on_action_auth)
+
+#: "Status" menu item
 
 
 def on_action_status() -> None:
@@ -121,6 +133,35 @@ def on_action_status() -> None:
 action_status = QAction("Status")
 qconnect(action_status.triggered, on_action_status)
 
+#: "Import Rember data" menu item
+
+
+def on_action_import_rember_data() -> None:
+    if mw.pm is None:
+        raise Exception("ProfileManager not defined")
+
+    if _auth.state._tag == "Unknown":
+        return
+
+    if _auth.state._tag == "LoggedOut" or _auth.state._tag == "SigningIn":
+        showInfo("Logged out.")
+        return
+
+    showInfo(
+        "Importing your Rember data...\n\nNote: You don't need to import manually, the Rember add-on automatically imports your data whenever you sync Anki."
+    )
+
+    # Clear cookie_replicache, so that we pull from scratch when the user imports manually
+    _cookie_replicache.reset()
+
+    # Pull
+    _puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
+    _puller.pull()
+
+
+action_import_rember_data = QAction("Import Rember data")
+qconnect(action_import_rember_data.triggered, on_action_import_rember_data)
+
 #: "Help" menu item
 
 
@@ -139,9 +180,12 @@ if mw.pm is not None:
 
     menu_rember.addAction(action_auth)
     menu_rember.addAction(action_status)
+    menu_rember.addAction(action_import_rember_data)
     menu_rember.addAction(action_help)
 
-#: Pull before sync
+#: Setup the puller
+
+_puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
 
 # WARN: We want to pull from Rember before syncing, so that the changes are
 # are synced. In order for this to work as we expect, we rely on background
