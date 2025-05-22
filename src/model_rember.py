@@ -1,5 +1,4 @@
-import os
-
+# TODO: document that this file creates a global Rember model which renders rembs
 from aqt import mw
 
 #: Constants
@@ -19,11 +18,6 @@ NAME_TEMPLATE_MODEL_REMBER = lambda ix: f"Card #{ix + 1}"
 # Arbitrary large number to accomodate Rembs with many cards or many changes to
 # the cards.
 CNT_MAX_ANKI_CARDS = 32
-
-# TODO: Review
-# Fields in a AnkiNote must be separated by this character.
-# See NoteAnki["flds"].
-SEPARATOR_ANKI = "\u001f"
 
 #: Utils
 
@@ -50,9 +44,6 @@ def make_template(side: str, ix: int) -> str:
     path_css_app_anki = f"/_addons/{addon}/app_anki/app-anki.css"
 
     template = """
-
-
-
 {{#<FIELD_ID_CARD>}}
 
 <script id="rember-script-template">
@@ -145,7 +136,7 @@ def make_template(side: str, ix: int) -> str:
 #:
 
 
-def create_rember_model():
+def create_model_rember():
     if mw.col is None:
         raise RuntimeError("Connection is None")
 
@@ -199,3 +190,17 @@ def create_rember_model():
     ##:
 
     models.add(notetype)
+
+
+#:
+
+
+def get_model_rember():
+    if mw.col is None:
+        raise RuntimeError("Connection is None")
+
+    notetype = mw.col.models.by_name(NAME_MODEL_REMBER)
+    if notetype is None:
+        raise RuntimeError("Rember model not found")
+
+    return notetype
