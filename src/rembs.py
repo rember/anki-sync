@@ -199,7 +199,7 @@ class Rembs:
                     raise ValueError(
                         "Invalid remb content, expected 'occlusions' to be a list"
                     )
-                tokens = occlusions
+                tokens = [occlusion["id"] for occlusion in occlusions]
             else:
                 raise ValueError(
                     f"Invalid remb content, unexpected crop type: {type_crop}"
