@@ -18,9 +18,8 @@ NAME_FIELD_ID_CARD = lambda ix: f"Card #{ix + 1} (Do not edit)"
 
 NAME_TEMPLATE_MODEL_REMBER = lambda ix: f"Card #{ix + 1}"
 
-# Arbitrary large number to accomodate Rembs with many cards or many changes to
-# the cards.
-CNT_MAX_ANKI_CARDS = 32
+# See README
+CNT_MAX_ANKI_CARDS = 100
 
 #: Utils
 

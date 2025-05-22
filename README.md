@@ -28,6 +28,34 @@ Users sign up with their Rember account following the best practices described i
 
 The `src/app_anki` folder contains the bundle for the `@rember/app-anki` package in the private `rember` repository. It's included in this repository using Git LFS and is used in the Rember note templates.
 
+### Preserving the review history when a remb changes
+
+**Problem**: The Anki review history breaks if a remb is updated and the card ids order changes (eg. crop order changes, card tokens order changes, crop is deleted). The reason is that review histories are associated to Anki cards, and Anki cards are associated to note templates by index (the `ord` property in the Anki card).
+
+For example:
+
+- _Student imports a remb_: Remb v1 has card ids `["c0", "c1"]`, the Anki note contains fields `Card #0: "c0", Card #1: "c1", Card #2: "", ...`. The Anki card with `ord: 0` is associated with template "Card #0" of the Anki note, and renders the card "c0".
+- _Student reviews the Anki card with `ord: 0`_
+- _Student updates the remb_: Remb v2 has card ids `["c1", "c0", "c2"]`, the Anki note contains fields `Card #0: "c1", Card #1: "c0", Card #2: "c2", Card #3: "", ...`. The Anki card with `ord: 0` now renders "c1" instead of "c0"; the Anki card with `ord: 1` now renders "c0". The result is that "c1" gained a review that never happened and "c0" lost a review.
+
+The limitation exists because Anki assumes that models are static, whereas we hack them to be dynamic.
+
+**Solution**: We use monotonic field assignment where each card maintains the same field forever (and consequently the template), and field indices are never reused once assigned. This preserves Anki review history perfectly while requiring no external state (mappings are read from current fields) and handles all user actions: create, update, delete, reorder.
+
+The algorithm uses a "high water mark" approach to support deletions safely:
+
+On note update:
+
+1. Read existing field assignments from the existing note
+2. Preserve field positions for cards that still exist
+3. Find the highest field index ever used (the "high water mark")
+4. Assign new cards starting from the next index after the high water mark
+5. Clear deleted cards but never reuse their field indices
+
+This approach has important tradeoffs. Field indices accumulate over time because deleted cards "burn" their indices permanently - when a card is deleted, its field is cleared but that index position is retired forever to prevent review history contamination. The high water mark ensures we never assign new cards to previously used indices, even if those fields are now empty.
+
+See `_compute_map_id_card_ix_field()` in `src/rembs.py`. We use 100 fields to accommodate card churn over a Remb's lifetime.
+
 ## References
 
 - [Anki GitHub](https://github.com/ankitects/anki/tree/main)

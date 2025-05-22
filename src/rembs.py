@@ -142,13 +142,56 @@ class Rembs:
         field_data = models.wrap_field_data(json.dumps(content_remb))
         note[models.NAME_FIELD_DATA] = field_data
 
-        # TODO: Try to use `tsCreated` to make this more robust to note updates
-        for ix, id_card in enumerate(ids_card):
-            field_id_card = id_card if ix < len(ids_card) else ""
-            note[models.NAME_FIELD_ID_CARD(ix)] = field_id_card
+        # Compute map id_card -> ix_field
+        map_id_card_ix_field = self._compute_map_id_card_ix_field(note, ids_card)
+        # Clear all fields first
+        for ix_field in range(models.CNT_MAX_ANKI_CARDS):
+            note[models.NAME_FIELD_ID_CARD(ix_field)] = ""
+        # Set the id_card in fields according to the map
+        for id_card, ix_field in map_id_card_ix_field.items():
+            note[models.NAME_FIELD_ID_CARD(ix_field)] = id_card
 
         field_media = ""  # Media are currently not supported in Rember
         note[models.NAME_FIELD_MEDIA] = field_media
+
+    def _compute_map_id_card_ix_field(
+        self, note: notes.Note, ids_card: list[str]
+    ) -> dict[str, int]:
+        """See README.md section "Preserving the review history when a remb is edited"."""
+        # Read current state from existing fields
+        map_id_card_ix_field_prev = {}  # id_card -> ix_field
+        ixs_field_prev = set()
+
+        for ix_field in range(models.CNT_MAX_ANKI_CARDS):
+            id_card = note[models.NAME_FIELD_ID_CARD(ix_field)]
+            if id_card:  # field has a card
+                if id_card in map_id_card_ix_field_prev:
+                    # Handle duplicate card IDs - keep the first occurrence
+                    continue
+                map_id_card_ix_field_prev[id_card] = ix_field
+                ixs_field_prev.add(ix_field)
+
+        # Find the high water mark
+        ix_field_max_prev = max(ixs_field_prev) if ixs_field_prev else -1
+
+        # Preserve existing mappings for cards that still exist
+        map_id_card_ix_field = {}
+        for id_card in ids_card:
+            if id_card in map_id_card_ix_field_prev:
+                map_id_card_ix_field[id_card] = map_id_card_ix_field_prev[id_card]
+
+        # Assign new cards starting from max + 1
+        ix_field = ix_field_max_prev + 1
+        for id_card in ids_card:
+            if id_card not in map_id_card_ix_field:
+                if ix_field >= models.CNT_MAX_ANKI_CARDS:
+                    raise RuntimeError(
+                        f"Field limit exceeded: cannot assign field {ix_field} (limit is {models.CNT_MAX_ANKI_CARDS}). This remb has used too many card slots over its lifetime."
+                    )
+                map_id_card_ix_field[id_card] = ix_field
+                ix_field += 1
+
+        return map_id_card_ix_field
 
     ##: Utils
 
