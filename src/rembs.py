@@ -1,7 +1,7 @@
 import json
 from typing import Optional
 
-from anki import collection, notes
+from anki import cards, collection, notes
 
 from . import decks, models
 from .puller_client import Patch
@@ -119,6 +119,7 @@ class Rembs:
             _notes.append(note)
 
         self._col.update_notes(_notes, skip_undo_entry=True)
+        self._delete_empty_cards()
 
     def _delete_rembs(self, ids_remb: set[str]):
         ids_note = [self._id_note_by_guid(id_remb) for id_remb in ids_remb]
@@ -192,6 +193,18 @@ class Rembs:
                 ix_field += 1
 
         return map_id_card_ix_field
+
+    def _delete_empty_cards(self):
+        """Remove empty Anki cards for the Rember notetype. See README.md for details."""
+        report_empty_cards = self._col.get_empty_cards()
+        ids_card_anki_to_delete = []
+        for note_with_empty_cards in report_empty_cards.notes:
+            note = self._col.get_note(notes.NoteId(note_with_empty_cards.note_id))
+            if note.mid == self._notetype["id"]:
+                ids_card_anki_to_delete.extend(
+                    [cards.CardId(id) for id in note_with_empty_cards.card_ids]
+                )
+        self._col.remove_cards_and_orphaned_notes(ids_card_anki_to_delete)
 
     ##: Utils
 

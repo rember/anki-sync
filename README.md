@@ -46,11 +46,13 @@ The algorithm uses a "high water mark" approach to support deletions safely:
 
 On note update:
 
-1. Read existing field assignments from the existing note
-2. Preserve field positions for cards that still exist
-3. Find the highest field index ever used (the "high water mark")
-4. Assign new cards starting from the next index after the high water mark
-5. Clear deleted cards but never reuse their field indices
+1. Read current card-to-field mappings from the existing note
+2. Keep existing field positions for cards that still exist in the updated remb
+3. Find the highest field index ever used as the "high water mark"
+4. Assign new cards to field indices starting after the high water mark
+5. Clear fields for deleted cards but never reuse those field indices
+
+After all notes have been updated, we use Anki's built-in `get_empty_cards()` and `remove_cards_and_orphaned_notes()` functions to identify and remove empty cards of the Rember notetype. Since the field has been emptied, the card is now considered empty by Anki and is deleted to avoid cluttering the user's deck.
 
 This approach has important tradeoffs. Field indices accumulate over time because deleted cards "burn" their indices permanently - when a card is deleted, its field is cleared but that index position is retired forever to prevent review history contamination. The high water mark ensures we never assign new cards to previously used indices, even if those fields are now empty.
 
