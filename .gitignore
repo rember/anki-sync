@@ -1,5 +1,6 @@
 .env
 rember-anki-sync.zip
+tmp/
 
 # MacOS
 .DS_Store
