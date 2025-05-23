@@ -11,8 +11,8 @@ dev:
 	@echo "Done."
 
 package:
-	@echo "Creating zip archive: rember-anki-sync.zip"
-	@(cd src && zip -r "../rember-anki-sync.zip" . -x "*/__pycache__/*" "*.pyc" "*.pyo" ".DS_Store")
+	@echo "Creating zip archive: rember-anki-sync.ankiaddon"
+	@(cd src && zip -r "../rember-anki-sync.ankiaddon" . -x "*/__pycache__/*" "*.pyc" "*.pyo" ".DS_Store")
 	@echo "Done"
 
 update-app-anki:
