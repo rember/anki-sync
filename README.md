@@ -1,6 +1,16 @@
-# Anki Add-on to sync flashcards from Rember
+# Anki add-on for Rember
 
-## Setup
+This add-on imports flashcards from [Rember](rember.com) into Anki. It converts rembs into Anki notes that can be reviewed in Anki.
+
+The add-on adds a `Tools > Rember` menu to Anki. After signing in with your Rember account, the add-on imports your Rember flashcards before each Anki sync. The flashcards are stored in a "Rember" deck, but you can move them to other decks.
+
+The add-on only imports rembs. It does not import decks, review history, or remb pause/unpaused states. This keeps the Anki and Rember systems separate, allowing you to manage your reviews in Anki while using Rember for content creation.
+
+Note that Anki add-ons are only supported on Anki Desktop. The iOS version of Anki and AnkiDroid (Android) do not support add-ons, so this add-on will not work on those platforms.
+
+![Menu screenshot](static/menu.png)
+
+## Develop
 
 - Clone the repo.
 
@@ -9,8 +19,6 @@
 - Install [Nix](https://nixos.org/).
 
 - Run `nix develop -c $SHELL` to start a development shell. This happens automatically if you use [direnv](https://direnv.net/).
-
-## Tasks
 
 Run `make dev` to createa `rember-anki-sync-dev` add-on in Anki, which you can use to test the add-on after making changes.
 
