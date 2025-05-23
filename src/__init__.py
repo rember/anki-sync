@@ -90,9 +90,6 @@ def callback_state_auth(state: auth.StateAuth):
     if state._tag == "SignedIn":
         action_auth.setText("Log out")
         action_import_rember_data.setEnabled(True)
-        # Pull on sign in
-        _puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
-        _puller.pull()
 
 
 _auth = auth.Auth(mw=mw, callback_state_auth=callback_state_auth)
