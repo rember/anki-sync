@@ -31,14 +31,14 @@ class Users:
             if op["op"] == "del":
                 if not op["key"].startswith("User/"):
                     continue
-                self._user_files.delete(key)
+                self._user_files.delete(op["key"])
 
             # put
 
             if op["op"] == "put":
                 if not op["key"].startswith("User/"):
                     continue
-                self._user_files.set(key, op["value"])
+                self._user_files.set(op["key"], op["value"])
 
     ##: get_email_user
 
