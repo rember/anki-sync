@@ -9,7 +9,7 @@ from .puller_client import Patch
 #:
 
 
-class Rembs:
+class Notes:
 
     def __init__(
         self, col: collection.Collection, models: models.Models, decks: decks.Decks
@@ -43,7 +43,7 @@ class Rembs:
             if op["op"] == "del":
                 if not op["key"].startswith("Remb/"):
                     continue
-                id_remb = self._id_remb_from_key(op["key"])
+                id_remb = self._id_remb_from_key_remb(op["key"])
                 ids_remb_to_delete.add(id_remb)
 
             # put
@@ -51,7 +51,7 @@ class Rembs:
             if op["op"] == "put":
                 if not op["key"].startswith("Remb/"):
                     continue
-                id_remb = self._id_remb_from_key(op["key"])
+                id_remb = self._id_remb_from_key_remb(op["key"])
                 id_note = self._id_note_by_guid(id_remb)
                 value = op["value"]
                 if id_note is None:
@@ -210,7 +210,7 @@ class Rembs:
 
     ##: Utils
 
-    def _id_remb_from_key(self, key: str) -> str:
+    def _id_remb_from_key_remb(self, key: str) -> str:
         return key[len("Remb/") :]
 
     def _ids_card_from_content_remb(self, content_remb: dict) -> list[str]:

@@ -10,9 +10,9 @@ from . import (
     auth_tokens,
     decks,
     models,
+    notes,
     puller_client,
     puller_cookie_replicache,
-    rembs,
     user_files,
     users,
 )
@@ -66,8 +66,8 @@ class Puller:
         _users.process_patch(patch)
         _models = models.Models(col=self._mw.col)
         _decks = decks.Decks(col=self._mw.col)
-        _rembs = rembs.Rembs(col=self._mw.col, models=_models, decks=_decks)
-        _rembs.process_patch(patch)
+        _notes = notes.Notes(col=self._mw.col, models=_models, decks=_decks)
+        _notes.process_patch(patch)
 
         return result_replicache_pull_for_anki
 
