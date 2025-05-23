@@ -51,5 +51,5 @@ class Users:
             return value["email"]
         else:
             raise ValueError(
-                f"Invalid data for user {id_user}. Email is missing or invalid."
+                f"Invalid data for user {id_user}: email is missing or not a string, got {type(value.get('email') if value else None)}"
             )

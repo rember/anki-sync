@@ -14,7 +14,7 @@ class Decks:
 
     ##: create_deck_rember
 
-    def create_deck_rember(self):
+    def create_deck_rember(self) -> None:
         """Creates the global "Rember" deck as the parent deck for all rembs
         imported from Rember.com. Decks imported from Rember will be created
         as subdecks nested under "Rember" (e.g., "Rember::Biology", "Rember::History").
@@ -35,7 +35,7 @@ class Decks:
 
     ##: get_deck_rember
 
-    def get_deck_rember(self):
+    def get_deck_rember(self) -> dict:
         deck = self._col.decks.by_name(NAME_DECK_REMBER)
         if deck is None:
             raise RuntimeError("Rember deck not found")

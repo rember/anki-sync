@@ -79,7 +79,7 @@ class Auth:
 
     ##: _set_state
 
-    def _set_state(self, state: StateAuth):
+    def _set_state(self, state: StateAuth) -> None:
         self.state = state
         self._callback_state_auth(self.state)
 
@@ -93,7 +93,7 @@ class Auth:
 
     ##: refresh_state_from_tokens
 
-    def refresh_state_from_tokens(self):
+    def refresh_state_from_tokens(self) -> None:
         tokens = auth_tokens.get_tokens(self._mw.pm)
 
         if tokens is None and self.state._tag != "LoggedOut":
@@ -106,7 +106,7 @@ class Auth:
 
     ##: sign_in
 
-    def _sign_in_op(self):
+    def _sign_in_op(self) -> ResultSignIn:
         if self.state._tag != "SigningIn":
             raise RuntimeError(f"Invalid state: {self.state._tag}")
         server_loopback = self.state.server_loopback
@@ -130,7 +130,7 @@ class Auth:
 
         return SuccessSignIn(tokens=result_exchange.tokens)
 
-    def _sign_in_failure(self, error: Union[Exception, ErrorSignIn]):
+    def _sign_in_failure(self, error: Union[Exception, ErrorSignIn]) -> None:
         if self.state._tag != "SigningIn":
             raise RuntimeError(f"Invalid state: {self.state._tag}")
         server_loopback = self.state.server_loopback
@@ -149,10 +149,12 @@ class Auth:
             )
             show_exception(
                 parent=self._mw,
-                exception=Exception(f"Sign in failed. {error._tag}: {error.message}"),
+                exception=RuntimeError(
+                    f"Sign in failed. {error._tag}: {error.message}"
+                ),
             )
 
-    def _sign_in_success(self, result_sign_in: ResultSignIn):
+    def _sign_in_success(self, result_sign_in: ResultSignIn) -> None:
         if self.state._tag != "SigningIn":
             raise RuntimeError(f"Invalid state: {self.state._tag}")
         server_loopback = self.state.server_loopback
@@ -168,7 +170,7 @@ class Auth:
 
         self._set_state(StateSignedIn(result_sign_in.tokens))
 
-    def sign_in(self):
+    def sign_in(self) -> None:
         if self.state._tag != "LoggedOut":
             raise RuntimeError(f"Invalid state: {self.state._tag}")
 
@@ -200,7 +202,7 @@ class Auth:
 
     ##: cancel_sign_in
 
-    def cancel_sign_in(self):
+    def cancel_sign_in(self) -> None:
         if self.state._tag != "SigningIn":
             raise RuntimeError(f"Invalid state: {self.state._tag}")
         server_loopback = self.state.server_loopback
@@ -212,7 +214,7 @@ class Auth:
 
     ##: log_out
 
-    def log_out(self):
+    def log_out(self) -> None:
         if self.state._tag != "SignedIn":
             raise RuntimeError(f"Invalid state: {self.state._tag}")
 
@@ -226,7 +228,11 @@ class Auth:
     # This does not use QueryOp, because it's not possible to compose QueryOp
     # and we usually refresh the tokens before making a request to the Rember
     # API in the background.
-    def refresh_tokens(self):
+    def refresh_tokens(
+        self,
+    ) -> Union[
+        auth_client.SuccessRefresh, auth_client.ErrorClientAuth, auth_tokens.ErrorTokens
+    ]:
         if self.state._tag != "SignedIn":
             raise RuntimeError(f"Invalid state: {self.state._tag}")
         tokens = self.state.tokens
@@ -245,7 +251,9 @@ class Auth:
             )
             show_exception(
                 parent=self._mw,
-                exception=Exception(f"{result_refresh._tag}: {result_refresh.message}"),
+                exception=RuntimeError(
+                    f"{result_refresh._tag}: {result_refresh.message}"
+                ),
             )
         elif result_refresh.tokens is not None:
             auth_tokens.set_tokens(self._mw.pm, result_refresh.tokens)

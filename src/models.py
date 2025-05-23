@@ -4,7 +4,7 @@
 # how cards are displayed during review.
 import os
 
-from anki import collection
+from anki import collection, models
 
 #: Constants
 
@@ -147,7 +147,7 @@ class Models:
 
     ##: create_model_rember
 
-    def create_model_rember(self):
+    def create_model_rember(self) -> None:
         """
         Creates a global Rember note type (model) which defines the fields and templates
         used to generate cards from rembs imported from Rember.com. The model is created when
@@ -207,7 +207,7 @@ class Models:
 
     ##: create_media_app_anki
 
-    def create_media_app_anki(self):
+    def create_media_app_anki(self) -> None:
         path_addon = os.path.dirname(os.path.realpath(__file__))
         path_app_anki = os.path.join(path_addon, "app_anki")
         path_script_app_anki = os.path.join(path_app_anki, "app-anki.umd.cjs")
@@ -223,7 +223,7 @@ class Models:
 
     ##: get_model_rember
 
-    def get_model_rember(self):
+    def get_model_rember(self) -> models.NotetypeDict:
         notetype = self._col.models.by_name(NAME_MODEL_REMBER)
         if notetype is None:
             raise RuntimeError("Rember model not found")

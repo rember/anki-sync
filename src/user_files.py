@@ -67,3 +67,8 @@ class UserFiles:
         with self._lock:
             self._data.clear()
             self._save_data()
+
+    def has(self, key: str) -> bool:
+        """Check if a key exists."""
+        with self._lock:
+            return key in self._data

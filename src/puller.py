@@ -41,7 +41,14 @@ class Puller:
 
     ##: pull
 
-    def _pull_op(self):
+    def _pull_op(
+        self,
+    ) -> Union[
+        puller_client.SuccessReplicachePullForAnki,
+        puller_client.ErrorClientPuller,
+        auth_client.ErrorClientAuth,
+        auth_tokens.ErrorTokens,
+    ]:
         if self._auth.state._tag != "SignedIn":
             raise RuntimeError(f"Invalid auth state: {self._auth.state._tag}")
         if self._mw.col is None:
@@ -91,7 +98,7 @@ class Puller:
             auth_client.ErrorClientAuth,
             auth_tokens.ErrorTokens,
         ],
-    ):
+    ) -> None:
         if self._auth.state._tag != "SignedIn":
             raise RuntimeError(f"Invalid auth state: {self._auth.state._tag}")
 
@@ -105,7 +112,7 @@ class Puller:
             )
             show_exception(
                 parent=self._mw,
-                exception=Exception(f"Pull failed. {error._tag}: {error.message}"),
+                exception=RuntimeError(f"Pull failed. {error._tag}: {error.message}"),
             )
 
     def _pull_success(
@@ -115,7 +122,7 @@ class Puller:
             auth_client.ErrorClientAuth,
             auth_tokens.ErrorTokens,
         ],
-    ):
+    ) -> None:
         if self._auth.state._tag != "SignedIn":
             raise RuntimeError(f"Invalid auth state: {self._auth.state._tag}")
 
@@ -124,7 +131,7 @@ class Puller:
 
         self._logger.info("Pull succeeded", self._mw)
 
-    def pull(self):
+    def pull(self) -> None:
         if self._auth.state._tag != "SignedIn":
             return
 

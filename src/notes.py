@@ -67,7 +67,7 @@ class Notes:
         self._update_rembs(rembs_to_update)
         self._delete_rembs(ids_remb_to_delete)
 
-    def _create_rembs(self, rembs: list[dict]):
+    def _create_rembs(self, rembs: list[dict]) -> None:
         _notes: list[collection.AddNoteRequest] = []
 
         for remb in rembs:
@@ -76,7 +76,7 @@ class Notes:
             content_remb = remb["content"]
             if not isinstance(content_remb, dict):
                 raise ValueError(
-                    "Invalid remb content, expected 'content' to be a dictionary"
+                    f"Invalid remb content for remb {id_remb}: expected 'content' to be a dictionary, got {type(content_remb)}"
                 )
 
             ids_card = self._ids_card_from_content_remb(content_remb)
@@ -95,7 +95,7 @@ class Notes:
 
         self._col.add_notes(_notes)
 
-    def _update_rembs(self, rembs: list[dict]):
+    def _update_rembs(self, rembs: list[dict]) -> None:
         _notes: list[notes.Note] = []
 
         for remb in rembs:
@@ -107,7 +107,7 @@ class Notes:
             content_remb = remb["content"]
             if not isinstance(content_remb, dict):
                 raise ValueError(
-                    "Invalid remb content, expected 'content' to be a dictionary"
+                    f"Invalid remb content for remb {id_remb}: expected 'content' to be a dictionary, got {type(content_remb)}"
                 )
 
             ids_card = self._ids_card_from_content_remb(content_remb)
@@ -123,7 +123,7 @@ class Notes:
         self._col.update_notes(_notes, skip_undo_entry=True)
         self._delete_empty_cards()
 
-    def _delete_rembs(self, ids_remb: set[str]):
+    def _delete_rembs(self, ids_remb: set[str]) -> None:
         ids_note = [self._id_note_by_guid(id_remb) for id_remb in ids_remb]
         ids_note = [
             notes.NoteId(id_note) for id_note in ids_note if id_note is not None
@@ -133,13 +133,15 @@ class Notes:
 
     def _set_note_fields(
         self, note: notes.Note, id_remb: str, content_remb: dict, ids_card: list[str]
-    ):
+    ) -> None:
         field_link = f"""<a href="https://rember.com/r/${id_remb}">Edit in Rember (Remb ${id_remb})</a>"""
         note[models.NAME_FIELD_LINK] = field_link
 
         field_note = content_remb["note"]["text"]["textPlain"]
         if not isinstance(field_note, str):
-            raise ValueError("Invalid remb content, 'textPlain' not found.")
+            raise ValueError(
+                f"Invalid remb content for remb {id_remb}: 'textPlain' not found or not a string."
+            )
         note[models.NAME_FIELD_NOTE] = field_note
 
         field_data = models.wrap_field_data(json.dumps(content_remb))
@@ -196,7 +198,7 @@ class Notes:
 
         return map_id_card_ix_field
 
-    def _delete_empty_cards(self):
+    def _delete_empty_cards(self) -> None:
         """Remove empty Anki cards for the Rember notetype. See README.md for details."""
         report_empty_cards = self._col.get_empty_cards()
         ids_card_anki_to_delete = []
@@ -232,7 +234,9 @@ class Notes:
         """
         crops = content_remb["crops"]
         if not isinstance(crops, list):
-            raise ValueError("Invalid remb content, expected 'crops' to be a list")
+            raise ValueError(
+                f"Invalid remb content: expected 'crops' to be a list, got {type(crops)}"
+            )
 
         ids_card = []
 
@@ -240,13 +244,13 @@ class Notes:
             id_crop = crop["id"]
             if not isinstance(id_crop, str):
                 raise ValueError(
-                    "Invalid remb content, expected crop 'id' to be a string"
+                    f"Invalid remb content: expected crop 'id' to be a string, got {type(id_crop)}"
                 )
 
             type_crop = crop["type"]
             if not isinstance(type_crop, str):
                 raise ValueError(
-                    "Invalid remb content, expected crop 'type' to be a string"
+                    f"Invalid remb content: expected crop 'type' to be a string, got {type(type_crop)}"
                 )
 
             if type_crop == "qa":
@@ -255,12 +259,12 @@ class Notes:
                 occlusions = crop["occlusions"]
                 if not isinstance(occlusions, list):
                     raise ValueError(
-                        "Invalid remb content, expected 'occlusions' to be a list"
+                        f"Invalid remb content: expected 'occlusions' to be a list, got {type(occlusions)}"
                     )
                 tokens = [occlusion["id"] for occlusion in occlusions]
             else:
                 raise ValueError(
-                    f"Invalid remb content, unexpected crop type: {type_crop}"
+                    f"Invalid remb content: unexpected crop type '{type_crop}'"
                 )
 
             for token in tokens:

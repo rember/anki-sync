@@ -3,6 +3,8 @@ import os
 from datetime import datetime
 from typing import Optional, Union
 
+from aqt.main import AnkiQt
+
 from . import auth_tokens, user_files, version
 
 #:
@@ -13,7 +15,7 @@ class Logger:
         self._user_files = user_files
         self._setup_logger()
 
-    def _setup_logger(self):
+    def _setup_logger(self) -> None:
         """Set up the logger to write to rember.log in the user_files directory."""
         # Get the user_files directory path
         path_addon = os.path.dirname(os.path.realpath(__file__))
@@ -40,7 +42,7 @@ class Logger:
         # Add handler to logger
         self._logger.addHandler(file_handler)
 
-    def _get_context_info(self, mw=None) -> str:
+    def _get_context_info(self, mw: Optional[AnkiQt] = None) -> str:
         """Get context information like user ID and cookie replicache."""
         context_parts = []
 
@@ -72,17 +74,22 @@ class Logger:
 
         return f"[{', '.join(context_parts)}]" if context_parts else ""
 
-    def info(self, message: str, mw=None):
+    def info(self, message: str, mw: Optional[AnkiQt] = None) -> None:
         """Log an info message with context."""
         context = self._get_context_info(mw)
         self._logger.info(f"{context} {message}")
 
-    def warn(self, message: str, mw=None):
+    def warn(self, message: str, mw: Optional[AnkiQt] = None) -> None:
         """Log a warning message with context."""
         context = self._get_context_info(mw)
         self._logger.warning(f"{context} {message}")
 
-    def error(self, message: str, mw=None, exception: Optional[Exception] = None):
+    def error(
+        self,
+        message: str,
+        mw: Optional[AnkiQt] = None,
+        exception: Optional[Exception] = None,
+    ) -> None:
         """Log an error message with context and optional exception details."""
         context = self._get_context_info(mw)
         error_msg = f"{context} {message}"

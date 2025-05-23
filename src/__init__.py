@@ -3,7 +3,7 @@ from aqt import appVersion
 required_anki_version = (23, 10, 0)
 anki_version = tuple(int(segment) for segment in appVersion.split("."))
 if anki_version < required_anki_version:
-    raise Exception(
+    raise RuntimeError(
         f"Minimum Anki version supported: {required_anki_version[0]}.{required_anki_version[1]}.{required_anki_version[2]}"
     )
 
@@ -43,7 +43,7 @@ mw.addonManager.setWebExports(__name__, r"app_anki/.*(css|js)")
 
 
 # Create the "Rember X.X.X" model and the "Rember" deck
-def on_load(_):
+def on_load(_) -> None:
     if mw.col is None:
         raise RuntimeError("Collection is None")
 
@@ -81,7 +81,7 @@ if mw.pm is not None:
 #: Auth
 
 
-def callback_state_auth(state: auth.StateAuth):
+def callback_state_auth(state: auth.StateAuth) -> None:
     if state._tag == "LoggedOut":
         action_auth.setText("Sign in")
         action_import_rember_data.setEnabled(False)
@@ -102,15 +102,15 @@ def callback_state_auth(state: auth.StateAuth):
 _auth = auth.Auth(mw=mw, callback_state_auth=callback_state_auth, logger=_logger)
 
 
-def refresh_auth():
+def refresh_auth() -> None:
     if mw.pm is None:
-        raise Exception("ProfileManager not defined")
+        raise RuntimeError("ProfileManager not defined")
 
     _auth.refresh_state_from_tokens()
     action_auth.setEnabled(True)
 
 
-def close_auth():
+def close_auth() -> None:
     action_auth.setEnabled(False)
     action_import_rember_data.setEnabled(False)
     _auth.close()
@@ -134,7 +134,7 @@ gui_hooks.sync_will_start.append(_puller.pull)
 ##: action_auth
 
 
-def on_action_auth():
+def on_action_auth() -> None:
     if _auth.state._tag == "LoggedOut":
         return _auth.sign_in()
     if _auth.state._tag == "SigningIn":
@@ -150,7 +150,7 @@ qconnect(action_auth.triggered, on_action_auth)
 
 def on_action_status() -> None:
     if mw.pm is None:
-        raise Exception("ProfileManager not defined")
+        raise RuntimeError("ProfileManager not defined")
 
     if _auth.state._tag == "Unknown":
         return
@@ -169,7 +169,7 @@ def on_action_status() -> None:
         )
         show_exception(
             parent=mw,
-            exception=Exception(
+            exception=RuntimeError(
                 f"{result_decode_token_access._tag}: {result_decode_token_access.message}"
             ),
         )
@@ -192,10 +192,10 @@ qconnect(action_status.triggered, on_action_status)
 
 def on_action_import_rember_data() -> None:
     if mw.pm is None:
-        raise Exception("ProfileManager not defined")
+        raise RuntimeError("ProfileManager not defined")
 
     if _auth.state._tag != "SignedIn":
-        raise RuntimeError("Unreachable. Menu actin should be disabled")
+        raise RuntimeError("Unreachable. Menu action should be disabled")
 
     showInfo(
         "Importing your Rember data...\n\nNote: You don't need to import manually, the Rember add-on automatically imports your data whenever you sync Anki."
