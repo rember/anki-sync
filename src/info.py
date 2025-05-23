@@ -1,1 +1,2 @@
 VERSION_REMBER_ANKI_SYNC = "0.1.0"
+SITE_REMBER = "rember.com"

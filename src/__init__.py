@@ -16,20 +16,20 @@ from . import (
     auth,
     auth_tokens,
     decks,
+    info,
     logger,
     models,
     puller,
     puller_cookie_replicache,
     user_files,
     users,
-    version,
 )
 
 #: Init
 
 
 _user_files = user_files.UserFiles()
-_user_files.set("version_rember_anki_sync", version.VERSION_REMBER_ANKI_SYNC)
+_user_files.set("version_rember_anki_sync", info.VERSION_REMBER_ANKI_SYNC)
 _cookie_replicache = puller_cookie_replicache.CookieReplicache(user_files=_user_files)
 
 _logger = logger.Logger(user_files=_user_files)

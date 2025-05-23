@@ -1,5 +1,4 @@
 from anki import collection
-from aqt import mw
 
 #:
 

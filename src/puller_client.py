@@ -3,16 +3,12 @@ from typing import Literal, TypedDict, Union
 
 import requests
 
-from . import version
+from . import info
 
 #: Shared
 
-BASE_URL = (
-    "https://www.development.rember.com"
-    if os.getenv("DEVELOPMENT") == "true"
-    else "https://www.rember.com"
-)
-ENDPOINT_REPLICACHE_PULL_FOR_ANKI = f"{BASE_URL}/api/v1/replicache-pull-for-anki"
+URL_BASE = f"https://www.{info.SITE_REMBER}"
+ENDPOINT_REPLICACHE_PULL_FOR_ANKI = f"{URL_BASE}/api/v1/replicache-pull-for-anki"
 VERSION_SCHEMA_REPLICACHE = "6"
 
 
@@ -58,7 +54,7 @@ def replicache_pull_for_anki(
 ) -> ResultReplicachePullForAnki:
     payload = {
         "version": "1",
-        "versionAddonRemberAnkiSync": version.VERSION_REMBER_ANKI_SYNC,
+        "versionAddonRemberAnkiSync": info.VERSION_REMBER_ANKI_SYNC,
         "versionSchema": VERSION_SCHEMA_REPLICACHE,
         "cookie": cookie_replicache,
     }

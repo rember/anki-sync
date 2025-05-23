@@ -1,11 +1,10 @@
 import logging
 import os
-from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
 
 from aqt.main import AnkiQt
 
-from . import auth_tokens, user_files, version
+from . import auth_tokens, info, user_files
 
 #:
 
@@ -47,7 +46,7 @@ class Logger:
         context_parts = []
 
         # Add version
-        context_parts.append(f"v{version.VERSION_REMBER_ANKI_SYNC}")
+        context_parts.append(f"v{info.VERSION_REMBER_ANKI_SYNC}")
 
         # Try to get user ID from tokens
         if mw and mw.pm:
