@@ -9,12 +9,12 @@ class UserFiles:
 
     def __init__(self):
 
-        dir_addon = os.path.dirname(os.path.realpath(__file__))
-        dir_user_files = os.path.join(dir_addon, "user_files")
+        path_addon = os.path.dirname(os.path.realpath(__file__))
+        path_user_files = os.path.join(path_addon, "user_files")
 
-        if not os.path.exists(dir_user_files):
-            raise FileNotFoundError(f"Directory '{dir_user_files}' does not exist")
-        self.file_data_json = os.path.join(dir_user_files, "data.json")
+        if not os.path.exists(path_user_files):
+            raise FileNotFoundError(f"Directory '{path_user_files}' does not exist")
+        self.file_data_json = os.path.join(path_user_files, "data.json")
 
         self._data: Dict[str, Any] = {}
         self._load_data()

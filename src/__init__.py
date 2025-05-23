@@ -38,6 +38,7 @@ mw.addonManager.setWebExports(__name__, r"app_anki/.*(css|js)")
 
 # Create the "Rember X.X.X" model and the "Rember" deck
 def on_load(_):
+    models.create_media_app_anki()
     models.create_model_rember()
     decks.create_deck_rember()
 

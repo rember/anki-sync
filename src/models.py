@@ -2,13 +2,26 @@
 # used to generate cards from rembs imported from Rember.com. The model is created when
 # the add-on loads and contains fields for storing remb data and templates that determine
 # how cards are displayed during review.
+import os
+
 from aqt import mw
 
 #: Constants
 
-# WARN: The version in the model name matches the addon version in which the
-# model was introduced.
+# The version in the model name matches the addon version in which the model was
+# introduced.
 NAME_MODEL_REMBER = "Rember 0.1.0"
+
+# Files for @rember/app-anki, which are copied in the Anki's media folder.
+# File names starting with "_" are special in Anki, they are kept even if no
+# note references them.
+# We include "rember_0_1_0" in the file names to keep multiple versions of
+# app_anki around for different version of the Rember model.
+# Note that we might update the add-on with a newer version of @rember/app-anki,
+# without updating the Rember model.
+# See `create_media_app_anki` below.
+NAME_FILE_SCRIPT_APP_ANKI = "_rember_0_1_0_app_anki.umd.cjs"
+NAME_FILE_CSS_APP_ANKI = "_rember_0_1_0_app_anki.css"
 
 NAME_FIELD_LINK = "Link (Do not edit)"
 NAME_FIELD_NOTE = "Note (Do not edit)"
@@ -35,15 +48,14 @@ def make_template(side: str, ix: int) -> str:
     is HTML, therefore we can use it to inject the app-anki Svelte component in
     the page.
 
+    The template is repeated `CNT_MAX_ANKI_CARDS` times in the user collection,
+    which is not ideal.
+
     REFS:
     https://docs.ankiweb.net/templates/intro.html
     https://www.reddit.com/r/Anki/comments/e005jx/load_js_functions_in_external_file/
     https://www.reddit.com/r/Anki/comments/ckahp6/es6_modules_in_ankis_javascript/
     """
-
-    addon = mw.addonManager.addonFromModule(__name__)
-    path_script_app_anki = f"/_addons/{addon}/app_anki/app-anki.umd.cjs"
-    path_css_app_anki = f"/_addons/{addon}/app_anki/app-anki.css"
 
     template = """
 {{#<FIELD_ID_CARD>}}
@@ -80,8 +92,8 @@ def make_template(side: str, ix: int) -> str:
     const linkCssAnki = document.querySelector('[href$="webview.css"]');
     if (linkCssAnki != undefined) linkCssAnki.remove();
 
-    await injectScript('<PATH_SCRIPT_APP_ANKI>');
-    await injectCSS('<PATH_CSS_APP_ANKI>');
+    await injectScript('<NAME_FILE_SCRIPT_APP_ANKI>');
+    await injectCSS('<NAME_FILE_CSS_APP_ANKI>');
   }
 
   var renderAppAnki = () => {
@@ -128,8 +140,8 @@ def make_template(side: str, ix: int) -> str:
 
     return (
         template.replace("<FIELD_ID_CARD>", NAME_FIELD_ID_CARD(ix))
-        .replace("<PATH_SCRIPT_APP_ANKI>", path_script_app_anki)
-        .replace("<PATH_CSS_APP_ANKI>", path_css_app_anki)
+        .replace("<NAME_FILE_SCRIPT_APP_ANKI>", NAME_FILE_SCRIPT_APP_ANKI)
+        .replace("<NAME_FILE_CSS_APP_ANKI>", NAME_FILE_CSS_APP_ANKI)
         .replace("<FIELD_DATA>", NAME_FIELD_DATA)
         .replace("<SIDE>", side)
     )
@@ -206,3 +218,24 @@ def get_model_rember():
         raise RuntimeError("Rember model not found")
 
     return notetype
+
+
+#:
+
+
+def create_media_app_anki():
+    if mw.col is None:
+        raise RuntimeError("Connection is None")
+
+    path_addon = os.path.dirname(os.path.realpath(__file__))
+    path_app_anki = os.path.join(path_addon, "app_anki")
+    path_script_app_anki = os.path.join(path_app_anki, "app-anki.umd.cjs")
+    path_css_app_anki = os.path.join(path_app_anki, "app-anki.css")
+
+    # Delete the files if they already exist, in order to update them
+    mw.col.media.trash_files([NAME_FILE_SCRIPT_APP_ANKI, NAME_FILE_CSS_APP_ANKI])
+
+    with open(path_script_app_anki, "rb") as file_script:
+        mw.col.media.write_data(NAME_FILE_SCRIPT_APP_ANKI, file_script.read())
+    with open(path_css_app_anki, "rb") as file_css:
+        mw.col.media.write_data(NAME_FILE_CSS_APP_ANKI, file_css.read())

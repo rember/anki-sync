@@ -26,7 +26,66 @@ We install packages with `uv` only for type checking, the code is currently only
 
 Users sign up with their Rember account following the best practices described in [RFC 8252 - OAuth 2.0 for Native Apps](https://datatracker.ietf.org/doc/html/rfc8252): we use the authorization code grant with PKCE in an external browser and use the loopback interface to receive the OAuth redirect. Once we obtain auth tokens, we store them in the user profile. Anki stores AnkiWeb and AnkiHub auth tokens in the user profile as plain text, see for example [`sync_login`](https://github.com/ankitects/anki/blob/d3d6bd8ce006f178e2271fd8d317fdc8832095df/qt/aqt/sync.py#L320-L321).
 
-The `src/app_anki` folder contains the bundle for the `@rember/app-anki` package in the private `rember` repository. It's included in this repository using Git LFS and is used in the Rember note templates.
+The `src/app_anki` folder contains the bundle for the `@rember/app-anki` package in the private `rember` repository. It's included in this repository using Git LFS and is used in the Rember note model.
+
+### The Rember note model
+
+In Anki, users review cards and edit notes.
+Clozes are great examples of the distinction: you can add three clozes to a single note and three cards will be generated. You will then review each card individually, never the entire note.
+
+In Anki, a _model_ (or _note type_) is associated with each note; it mainly describes the fields and the templates.
+
+In the "Add" interface, you can pick the model by changing the "Type" in the top-left corner. The fields are the text boxes, with their names on top. Anki will use the model's templates to generate one or more cards from the note. A _template_ is a set of instructions for combining note fields into cards.
+
+For instance, the `Basic (and reversed card)` model contains the fields `Front` and `Back` and has two templates, one for the front->back card and one for the back->front card.
+
+Each template contains two HTML pages, one for the front of the card and one for the back of the card.
+The HTML can contain "replacements", special sequences of characters that are used to fill note-specific data.
+
+For instance, in the `Basic` model there is a single template, the front HTML page is
+
+```
+{{Front}}
+```
+
+and the back HTML page is
+
+```
+{{FrontSide}}
+
+<hr id=answer>
+
+{{Back}}
+```
+
+For more information, see https://docs.ankiweb.net/templates/fields.html#field-replacements.
+
+In Anki, a note generates one or more cards.
+In Rember, one or more cards are associated with a remb.
+Therefore, for each remb we export an Anki note and for each Rember card we export an Anki card.
+
+It's tricky to get Anki to generate the correct number of cards for each note.
+
+Multiple notes can share the same model.
+Each model can have one or more templates. Usually, one card is generated for each template.
+For instance, the "Basic (and reversed card)" model has two templates and generates two cards for each note.
+
+We want all notes imported from Rember to share the same "Rember" model.
+
+The problem is that each model has a fixed number of templates, but rembs can have an arbitrary number of Rember cards.
+
+We use the following approach to solve the problem:
+Anki does not create cards for templates with empty front sides https://docs.ankiweb.net/templates/generation.html?highlight=conditional#card-generation--deletion.
+In the "Rember" model we add 100 additional "Card" fields. We fill the front of the `i`-th template only if the `i`-th "Card" field is filled with text (see [Conditional Replacement](https://docs.ankiweb.net/templates/generation.html?highlight=conditional#conditional-replacement)).
+When a remb is imported, we fill as many "Card" fields as there are Rember cards and leave the others blank. Anki will generate the correct number of cards.
+
+Note: The front or back of an Anki card is considered empty if it does not contain any `{{field}}`, other than that you can have arbitrary HTML.
+
+The Rember model name includes a version number (e.g., "Rember 0.1.0") that matches the add-on version in which the model was introduced. Once a model exists in a user's collection, it is never automatically updated to preserve existing notes and review history. If breaking changes are needed, a new model version would be created.
+
+The `@rember/app-anki` JavaScript and CSS files are versioned separately from the model and can be updated independently. File names include version identifiers (e.g., `_rember_0_1_0_app_anki.umd.cjs`) to allow multiple versions to coexist. The underscore prefix ensures these files are preserved in Anki's media folder even when not directly referenced by notes.
+
+When the add-on loads, it creates the Rember model only if it doesn't already exist, ensuring no disruption to existing users. However, the app-anki media files are updated on each load by deleting the old files and writing new ones, allowing the user interface to be improved without changing the underlying model structure.
 
 ### Preserving the review history when a remb changes
 
@@ -61,5 +120,7 @@ See `_compute_map_id_card_ix_field()` in `src/rembs.py`. We use 100 fields to ac
 ## References
 
 - [Anki GitHub](https://github.com/ankitects/anki/tree/main)
+- [Anki docs](https://docs.ankiweb.net)
 - [Anki Add-ons docs](https://addon-docs.ankiweb.net/intro.html)
+- [AnkiDroid Database Structure](https://github.com/ankidroid/Anki-Android/wiki/Database-Structure)
 - [RFC 8252 - OAuth 2.0 for Native Apps](https://datatracker.ietf.org/doc/html/rfc8252)
