@@ -27,6 +27,7 @@
           pkgs-py39.python39
           uv
           gnumake
+          rsync
         ];
       };
     }

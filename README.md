@@ -22,7 +22,7 @@ Note that Anki add-ons are only supported on Anki Desktop. The iOS version of An
 
 Run `make dev` to createa `rember-anki-sync-dev` add-on in Anki, which you can use to test the add-on after making changes.
 
-Run `make zip` to create a `rember-anki-sync.zip` file which can be uploaded to [AnkiWeb](https://ankiweb.net/shared/addons).
+Run `make package` to create a `rember-anki-sync.zip` file which can be uploaded to [AnkiWeb](https://ankiweb.net/shared/addons).
 
 Run `make update-app-anki` to update the `src/app_anki` folder, it assumes that the private `rember` repo lives next to the project folder.
 

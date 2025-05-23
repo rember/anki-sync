@@ -2,17 +2,17 @@ include .env
 
 PATH_ANKI_ADDON_DEV = $(PATH_ANKI)/addons21/rember-anki-sync-dev
 
-.PHONY: dev zip update-app-anki
+.PHONY: dev package update-app-anki
 
 dev:
 	@echo "Copying source files to $(PATH_ANKI_ADDON_DEV)"
 	@mkdir -p "$(PATH_ANKI_ADDON_DEV)"
-	@cp -R src/. "$(PATH_ANKI_ADDON_DEV)/"
+	@rsync -av --exclude='__pycache__' --exclude='*.pyc' --exclude='*.pyo' src/. "$(PATH_ANKI_ADDON_DEV)/"
 	@echo "Done."
 
-zip:
+package:
 	@echo "Creating zip archive: rember-anki-sync.zip"
-	@(cd src && zip -r "../rember-anki-sync.zip" .)
+	@(cd src && zip -r "../rember-anki-sync.zip" . -x "*/__pycache__/*" "*.pyc" "*.pyo")
 	@echo "Done"
 
 update-app-anki:
