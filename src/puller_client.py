@@ -70,6 +70,11 @@ def replicache_pull_for_anki(
         except Exception as e:
             return ErrorClientPuller(message=f"Invalid response: {str(e)}")
     else:
+        # Intercept `Replicache/ErrorVersionNotSupported`
+        if response.status_code == 400:
+            data = response.json()
+            if data.get("_tag") == "Replicache/ErrorVersionNotSupported":
+                return ErrorClientPuller(message="Please update the Rember addon")
         return ErrorClientPuller(
             message=f"Request failed with status {response.status_code}: {response.text}"
         )
