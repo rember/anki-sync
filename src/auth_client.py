@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import os
 import secrets
 import time
 import urllib.parse
@@ -11,7 +12,11 @@ from . import auth_tokens
 
 #: Shared
 
-ISSUER_URL = "https://auth.development.rember.com"
+ISSUER_URL = (
+    "https://auth.development.rember.com"
+    if os.getenv("DEVELOPMENT") == "true"
+    else "https://auth.rember.com"
+)
 ENDPOINT_AUTHORIZATION = f"{ISSUER_URL}/authorize"
 ENDPOINT_TOKEN = f"{ISSUER_URL}/token"
 ID_CLIENT = "rember-anki-sync"

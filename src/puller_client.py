@@ -1,3 +1,4 @@
+import os
 from typing import Literal, TypedDict, Union
 
 import requests
@@ -6,7 +7,11 @@ from . import version
 
 #: Shared
 
-BASE_URL = "https://www.development.rember.com"
+BASE_URL = (
+    "https://www.development.rember.com"
+    if os.getenv("DEVELOPMENT") == "true"
+    else "https://www.rember.com"
+)
 ENDPOINT_REPLICACHE_PULL_FOR_ANKI = f"{BASE_URL}/api/v1/replicache-pull-for-anki"
 VERSION_SCHEMA_REPLICACHE = "6"
 
@@ -71,10 +76,14 @@ def replicache_pull_for_anki(
             return ErrorClientPuller(message=f"Invalid response: {str(e)}")
     else:
         # Intercept `Replicache/ErrorVersionNotSupported`
-        if response.status_code == 400:
+        try:
             data = response.json()
             if data.get("_tag") == "Replicache/ErrorVersionNotSupported":
                 return ErrorClientPuller(message="Please update the Rember addon")
+        except:
+            return ErrorClientPuller(
+                message=f"Request failed with status {response.status_code}: {response.text}"
+            )
         return ErrorClientPuller(
             message=f"Request failed with status {response.status_code}: {response.text}"
         )
