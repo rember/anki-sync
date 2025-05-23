@@ -38,9 +38,14 @@ mw.addonManager.setWebExports(__name__, r"app_anki/.*(css|js)")
 
 # Create the "Rember X.X.X" model and the "Rember" deck
 def on_load(_):
-    models.create_media_app_anki()
-    models.create_model_rember()
-    decks.create_deck_rember()
+    if mw.col is None:
+        raise RuntimeError("Collection is None")
+
+    _models = models.Models(col=mw.col)
+    _decks = decks.Decks(col=mw.col)
+    _models.create_media_app_anki()
+    _models.create_model_rember()
+    _decks.create_deck_rember()
 
 
 gui_hooks.collection_did_load.append(on_load)

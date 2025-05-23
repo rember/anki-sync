@@ -11,7 +11,9 @@ from .puller_client import Patch
 
 class Rembs:
 
-    def __init__(self, col: collection.Collection):
+    def __init__(
+        self, col: collection.Collection, models: models.Models, decks: decks.Decks
+    ):
         self._col = col
         self._notetype = models.get_model_rember()
         self._deck = decks.get_deck_rember()
