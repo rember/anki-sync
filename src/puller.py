@@ -82,7 +82,13 @@ class Puller:
         _users = users.Users(user_files=self._user_files)
         _models = models.Models(col=self._mw.col)
         _decks = decks.Decks(col=self._mw.col)
-        _notes = notes.Notes(col=self._mw.col, models=_models, decks=_decks)
+        _notes = notes.Notes(
+            mw=self._mw,
+            col=self._mw.col,
+            models=_models,
+            decks=_decks,
+            logger=self._logger,
+        )
         _users.process_patch(patch)
         self._logger.info("Users patch processed successfully", self._mw)
         _notes.process_patch(patch)

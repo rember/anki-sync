@@ -2,8 +2,9 @@ import json
 from typing import Optional
 
 from anki import cards, collection, notes
+from aqt.main import AnkiQt
 
-from . import decks, models
+from . import decks, models, logger
 from .puller_client import Patch
 
 #:
@@ -12,11 +13,18 @@ from .puller_client import Patch
 class Notes:
 
     def __init__(
-        self, col: collection.Collection, models: models.Models, decks: decks.Decks
+        self,
+        mw: AnkiQt,
+        col: collection.Collection,
+        models: models.Models,
+        decks: decks.Decks,
+        logger: logger.Logger,
     ):
+        self._mw = mw
         self._col = col
         self._notetype = models.get_model_rember()
         self._deck = decks.get_deck_rember()
+        self._logger = logger
 
     ##: process_patch
 
@@ -57,6 +65,15 @@ class Notes:
                 if id_note is None:
                     rembs_to_create.append(value)
                 else:
+                    # Skip if the note does not belong to the "Rember" model ()
+                    id_model = self._id_model_by_guid_note(id_remb)
+                    if id_model != self._notetype["id"]:
+                        self._logger.warn(
+                            f"Skipping note with guid {id_remb}. Note does not belong to Rember model",
+                            self._mw,
+                        )
+                        continue
+                    # Add `id_note` to the remb json data
                     value["id_note"] = id_note
                     rembs_to_update.append(value)
 
@@ -279,6 +296,16 @@ class Notes:
 
         return db.scalar(
             """select id from notes where guid = ?""",
+            guid,
+        )
+
+    def _id_model_by_guid_note(self, guid: str) -> Optional[int]:
+        db = self._col.db
+        if db is None:
+            raise RuntimeError("Database connection is None")
+
+        return db.scalar(
+            """select mid from notes where guid = ?""",
             guid,
         )
 
