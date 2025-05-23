@@ -1,11 +1,11 @@
-from typing import Callable, Union, Literal, TypedDict, Protocol, Any
+from typing import Callable, Literal, Union
 
-from aqt.main import AnkiQt
 from aqt.errors import show_exception
+from aqt.main import AnkiQt
 from aqt.operations import QueryOp
 from aqt.utils import openLink, showInfo
 
-from . import auth_client, auth_server_loopback, auth_tokens
+from . import auth_client, auth_server_loopback, auth_tokens, logger
 
 #:
 
@@ -68,9 +68,11 @@ class Auth:
         self,
         mw: AnkiQt,
         callback_state_auth: Callable[[StateAuth], None],
+        logger: logger.Logger,
     ):
         self._mw = mw
         self._callback_state_auth = callback_state_auth
+        self._logger = logger
 
         self.state = StateUnknown()
         self._callback_state_auth(self.state)
@@ -110,6 +112,8 @@ class Auth:
         server_loopback = self.state.server_loopback
         challenge = self.state.challenge
 
+        self._logger.info("Sign in started", self._mw)
+
         result_listen = server_loopback.listen()
         if result_listen._tag == "ErrorServerLoopback":
             return result_listen
@@ -136,13 +140,16 @@ class Auth:
         auth_tokens.set_tokens(self._mw.pm, None)
         self._set_state(StateLoggedOut())
 
-        print(error)
         if isinstance(error, Exception):
+            self._logger.error(f"Sign in failed.", self._mw, exception=error)
             show_exception(parent=self._mw, exception=error)
         else:
+            self._logger.error(
+                f"Sign in failed. {error._tag}: {error.message}", self._mw
+            )
             show_exception(
                 parent=self._mw,
-                exception=Exception(f"{error._tag}: {error.message}"),
+                exception=Exception(f"Sign in failed. {error._tag}: {error.message}"),
             )
 
     def _sign_in_success(self, result_sign_in: ResultSignIn):
@@ -157,6 +164,7 @@ class Auth:
 
         auth_tokens.set_tokens(self._mw.pm, result_sign_in.tokens)
         showInfo("Signed in to Rember successfully.")
+        self._logger.info("Sign in succeeded", self._mw)
 
         self._set_state(StateSignedIn(result_sign_in.tokens))
 
@@ -231,6 +239,10 @@ class Auth:
             auth_tokens.set_tokens(self._mw.pm, None)
             self._set_state(StateLoggedOut())
 
+            self._logger.error(
+                f"Token refresh failed. {result_refresh._tag}: {result_refresh.message}",
+                self._mw,
+            )
             show_exception(
                 parent=self._mw,
                 exception=Exception(f"{result_refresh._tag}: {result_refresh.message}"),

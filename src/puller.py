@@ -9,6 +9,7 @@ from . import (
     auth_client,
     auth_tokens,
     decks,
+    logger,
     models,
     notes,
     puller_client,
@@ -23,13 +24,20 @@ from . import (
 class Puller:
     ##: __init__
 
-    def __init__(self, mw: AnkiQt, auth: auth.Auth, user_files: user_files.UserFiles):
+    def __init__(
+        self,
+        mw: AnkiQt,
+        auth: auth.Auth,
+        user_files: user_files.UserFiles,
+        logger: logger.Logger,
+    ):
         self._mw = mw
         self._auth = auth
         self._user_files = user_files
         self._cookies_replicache = puller_cookie_replicache.CookieReplicache(
             user_files=self._user_files
         )
+        self._logger = logger
 
     ##: pull
 
@@ -39,6 +47,8 @@ class Puller:
         if self._mw.col is None:
             raise RuntimeError("Collection is None")
         tokens = self._auth.state.tokens
+
+        self._logger.info("Pull started", self._mw)
 
         # Refresh the auth tokens
         result_refresh = self._auth.refresh_tokens()
@@ -63,11 +73,13 @@ class Puller:
         # Process patch
         patch = result_replicache_pull_for_anki.patch
         _users = users.Users(user_files=self._user_files)
-        _users.process_patch(patch)
         _models = models.Models(col=self._mw.col)
         _decks = decks.Decks(col=self._mw.col)
         _notes = notes.Notes(col=self._mw.col, models=_models, decks=_decks)
+        _users.process_patch(patch)
+        self._logger.info("Users patch processed successfully", self._mw)
         _notes.process_patch(patch)
+        self._logger.info("Notes patch processed successfully", self._mw)
 
         return result_replicache_pull_for_anki
 
@@ -83,13 +95,17 @@ class Puller:
         if self._auth.state._tag != "SignedIn":
             raise RuntimeError(f"Invalid auth state: {self._auth.state._tag}")
 
-        print(error)
         if isinstance(error, Exception):
+            self._logger.error(f"Pull failed.", self._mw, exception=error)
             show_exception(parent=self._mw, exception=error)
         else:
+            self._logger.error(
+                f"Pull failed. {error._tag}: {error.message}",
+                self._mw,
+            )
             show_exception(
                 parent=self._mw,
-                exception=Exception(f"{error._tag}: {error.message}"),
+                exception=Exception(f"Pull failed. {error._tag}: {error.message}"),
             )
 
     def _pull_success(
@@ -105,6 +121,8 @@ class Puller:
 
         if result_replicache_pull_for_anki._tag != "Success":
             return self._pull_failure(error=result_replicache_pull_for_anki)
+
+        self._logger.info("Pull succeeded", self._mw)
 
     def pull(self):
         if self._auth.state._tag != "SignedIn":

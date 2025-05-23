@@ -16,6 +16,7 @@ from . import (
     auth,
     auth_tokens,
     decks,
+    logger,
     models,
     puller,
     puller_cookie_replicache,
@@ -24,12 +25,17 @@ from . import (
     version,
 )
 
-#: Setup
+#: Init
+
 
 _user_files = user_files.UserFiles()
 _user_files.set("version_rember_anki_sync", version.VERSION_REMBER_ANKI_SYNC)
 _cookie_replicache = puller_cookie_replicache.CookieReplicache(user_files=_user_files)
 
+_logger = logger.Logger(user_files=_user_files)
+
+# Log plugin initialization
+_logger.info(f"Plugin initialized", mw)
 
 # Allow access to app-anki files to the webviews
 # REFS: https://addon-docs.ankiweb.net/hooks-and-filters.html#managing-external-resources-in-webviews
@@ -82,6 +88,7 @@ def callback_state_auth(state: auth.StateAuth):
         # Clear cookie_replicache, so that we pull from scratch next time the
         # user signs in
         _cookie_replicache.reset()
+        _logger.info("Cookie replicache reset, reason: user logged out", mw)
 
     if state._tag == "SigningIn":
         action_auth.setText("Cancel sign-in")
@@ -92,7 +99,7 @@ def callback_state_auth(state: auth.StateAuth):
         action_import_rember_data.setEnabled(True)
 
 
-_auth = auth.Auth(mw=mw, callback_state_auth=callback_state_auth)
+_auth = auth.Auth(mw=mw, callback_state_auth=callback_state_auth, logger=_logger)
 
 
 def refresh_auth():
@@ -114,7 +121,7 @@ gui_hooks.profile_will_close.append(close_auth)
 
 #: Puller
 
-_puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
+_puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files, logger=_logger)
 
 # WARN: We want to pull from Rember before syncing, so that the changes are
 # are synced. In order for this to work as we expect, we rely on background
@@ -156,6 +163,10 @@ def on_action_status() -> None:
         _auth.state.tokens.access
     )
     if result_decode_token_access._tag != "Success":
+        _logger.error(
+            f"Failed to decode access token. {result_decode_token_access._tag}: {result_decode_token_access.message}",
+            mw,
+        )
         show_exception(
             parent=mw,
             exception=Exception(
@@ -192,9 +203,10 @@ def on_action_import_rember_data() -> None:
 
     # Clear cookie_replicache, so that we pull from scratch when the user imports manually
     _cookie_replicache.reset()
+    _logger.info("Cookie replicache reset, reason: manual import started", mw)
 
     # Pull
-    _puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
+    _puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files, logger=_logger)
     _puller.pull()
 
 
