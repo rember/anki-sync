@@ -10,6 +10,18 @@ Note that Anki add-ons are only supported on Anki Desktop. The iOS version of An
 
 ![Menu screenshot](static/menu.png)
 
+## Install the add-on in Anki
+
+The installation process is similar to other Anki add-ons and can be accomplished in three steps:
+
+1. Open the Install Add-on dialog by selecting `Tools > Add-ons > Get Add-ons...` in Anki.
+2. Input `1322886267` into the text box labeled `Code` and press the `OK` button to proceed.
+3. Restart Anki when prompted to do so in order to complete the installation of the Rember add-on.
+
+Alternatively, you can install the add-on directly from [AnkiWeb](https://ankiweb.net/shared/info/1322886267).
+
+After installation, you'll find a new `Tools > Rember` menu in Anki where you can sign in with your Rember account and configure the add-on.
+
 ## Develop
 
 - Clone the repo.
