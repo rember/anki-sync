@@ -50,23 +50,49 @@ def on_load(_):
 
 gui_hooks.collection_did_load.append(on_load)
 
-
-#: Setup auth / "Sign in"/"Log out" menu item
+#: Rember menu
 
 action_auth = QAction("Sign in")
 action_auth.setEnabled(False)
+
+action_status = QAction("Status")
+
+action_import_rember_data = QAction("Import Rember data")
+action_auth.setEnabled(False)
+
+action_help = QAction("Help")
+
+if mw.pm is not None:
+    menu_rember = mw.form.menuTools.addMenu("Rember")
+    assert menu_rember is not None
+
+    menu_rember.addAction(action_auth)
+    menu_rember.addAction(action_status)
+    menu_rember.addAction(action_import_rember_data)
+    menu_rember.addAction(action_help)
+
+
+#: Auth
 
 
 def callback_state_auth(state: auth.StateAuth):
     if state._tag == "LoggedOut":
         action_auth.setText("Sign in")
+        action_import_rember_data.setEnabled(False)
         # Clear cookie_replicache, so that we pull from scratch next time the
         # user signs in
         _cookie_replicache.reset()
+
     if state._tag == "SigningIn":
         action_auth.setText("Cancel sign-in")
+        action_import_rember_data.setEnabled(False)
+
     if state._tag == "SignedIn":
         action_auth.setText("Log out")
+        action_import_rember_data.setEnabled(True)
+        # Pull on sign in
+        _puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
+        _puller.pull()
 
 
 _auth = auth.Auth(mw=mw, callback_state_auth=callback_state_auth)
@@ -82,11 +108,26 @@ def refresh_auth():
 
 def close_auth():
     action_auth.setEnabled(False)
+    action_import_rember_data.setEnabled(False)
     _auth.close()
 
 
 gui_hooks.profile_did_open.append(refresh_auth)
 gui_hooks.profile_will_close.append(close_auth)
+
+#: Puller
+
+_puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
+
+# WARN: We want to pull from Rember before syncing, so that the changes are
+# are synced. In order for this to work as we expect, we rely on background
+# operations that access collection being serialized in Anki.
+gui_hooks.sync_will_start.append(_puller.pull)
+
+
+#: Action triggers
+
+##: action_auth
 
 
 def on_action_auth():
@@ -100,7 +141,7 @@ def on_action_auth():
 
 qconnect(action_auth.triggered, on_action_auth)
 
-#: "Status" menu item
+##: action_status
 
 
 def on_action_status() -> None:
@@ -136,22 +177,17 @@ def on_action_status() -> None:
     showInfo(f"Signed in as {email}")
 
 
-action_status = QAction("Status")
 qconnect(action_status.triggered, on_action_status)
 
-#: "Import Rember data" menu item
+##: `action_import_rember_data`
 
 
 def on_action_import_rember_data() -> None:
     if mw.pm is None:
         raise Exception("ProfileManager not defined")
 
-    if _auth.state._tag == "Unknown":
-        return
-
-    if _auth.state._tag == "LoggedOut" or _auth.state._tag == "SigningIn":
-        showInfo("Logged out.")
-        return
+    if _auth.state._tag != "SignedIn":
+        raise RuntimeError("Unreachable. Menu actin should be disabled")
 
     showInfo(
         "Importing your Rember data...\n\nNote: You don't need to import manually, the Rember add-on automatically imports your data whenever you sync Anki."
@@ -165,35 +201,13 @@ def on_action_import_rember_data() -> None:
     _puller.pull()
 
 
-action_import_rember_data = QAction("Import Rember data")
 qconnect(action_import_rember_data.triggered, on_action_import_rember_data)
 
-#: "Help" menu item
+##: `action_help`
 
 
 def on_action_help() -> None:
     openLink("mailto:support@rember.com")
 
 
-action_help = QAction("Help")
 qconnect(action_help.triggered, on_action_help)
-
-#: "Rember" menu
-
-if mw.pm is not None:
-    menu_rember = mw.form.menuTools.addMenu("Rember")
-    assert menu_rember is not None
-
-    menu_rember.addAction(action_auth)
-    menu_rember.addAction(action_status)
-    menu_rember.addAction(action_import_rember_data)
-    menu_rember.addAction(action_help)
-
-#: Setup the puller
-
-_puller = puller.Puller(mw=mw, auth=_auth, user_files=_user_files)
-
-# WARN: We want to pull from Rember before syncing, so that the changes are
-# are synced. In order for this to work as we expect, we rely on background
-# operations that access collection being serialized in Anki.
-gui_hooks.sync_will_start.append(_puller.pull)
