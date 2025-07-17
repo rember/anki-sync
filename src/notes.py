@@ -272,13 +272,6 @@ class Notes:
 
             if type_crop == "qa":
                 tokens = ["default"]
-            elif type_crop == "occlusion-text":
-                occlusions = crop["occlusions"]
-                if not isinstance(occlusions, list):
-                    raise ValueError(
-                        f"Invalid remb content: expected 'occlusions' to be a list, got {type(occlusions)}"
-                    )
-                tokens = [occlusion["id"] for occlusion in occlusions]
             else:
                 raise ValueError(
                     f"Invalid remb content: unexpected crop type '{type_crop}'"

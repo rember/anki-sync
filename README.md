@@ -32,7 +32,7 @@ After installation, you'll find a new `Tools > Rember` menu in Anki where you ca
 
 - Run `nix develop -c $SHELL` to start a development shell. This happens automatically if you use [direnv](https://direnv.net/).
 
-Run `make dev` to createa `rember-anki-sync-dev` add-on in Anki, which you can use to test the add-on after making changes.
+Run `make dev` to create a `rember-anki-sync-dev` add-on in Anki, which you can use to test the add-on after making changes.
 
 Run `make package` to create a `rember-anki-sync.ankiaddon` file which can be uploaded to [AnkiWeb](https://ankiweb.net/shared/addons).
 
