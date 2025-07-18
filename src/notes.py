@@ -154,10 +154,10 @@ class Notes:
         field_link = f"""<a href="https://rember.com/r/${id_remb}">Edit in Rember (Remb ${id_remb})</a>"""
         note[models.NAME_FIELD_LINK] = field_link
 
-        field_note = content_remb["note"]["text"]["textPlain"]
+        field_note = content_remb["note"]["text"]
         if not isinstance(field_note, str):
             raise ValueError(
-                f"Invalid remb content for remb {id_remb}: 'textPlain' not found or not a string."
+                f"Invalid remb content for remb {id_remb}: 'text' not found or not a string."
             )
         note[models.NAME_FIELD_NOTE] = field_note
 
