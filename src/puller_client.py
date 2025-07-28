@@ -9,7 +9,7 @@ from . import info
 
 URL_BASE = f"https://www.{info.SITE_REMBER}"
 ENDPOINT_REPLICACHE_PULL_FOR_ANKI = f"{URL_BASE}/api/v1/replicache-pull-for-anki"
-VERSION_SCHEMA_REPLICACHE = "7"
+VERSION_SCHEMA_REPLICACHE = "8"
 
 
 class ErrorClientPuller:
